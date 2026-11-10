@@ -482,7 +482,19 @@ main.an .anillo circle.a{animation:anillo 1s .15s var(--e) both}
   document.addEventListener('DOMContentLoaded', function () {
     if (!leer(KT)) { var navegador = false; try { navegador = sessionStorage.getItem('carena.navegador') === '1'; } catch (e) {} if (esIos && !instalada && !navegador) instalar(); else vincular(); }
   });
-  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  if ('serviceWorker' in navigator) {
+    var habia = !!navigator.serviceWorker.controller;      // versión nueva publicada: se recarga sola si no hay nada a medias; si no, entra al abrir la próxima vez
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!habia) { habia = true; return; }
+      try {
+        var S = window.App && App._S, c = document.getElementById('capa'), cod = document.getElementById('pwa-cod');
+        if (S && !S.reg && !S.enviando && !(c && c.firstChild) && !(cod && cod.value) && !document.getElementById('crono')) location.reload();
+      } catch (e) {}
+    });
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) {
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) { try { r.update(); } catch (e) {} } });
+    }).catch(function () {}); });
+  }
 })();
 </script>
 <script>

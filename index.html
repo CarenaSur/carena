@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carena</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; manifest-src 'self'; worker-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="manifest.webmanifest">
@@ -339,6 +339,55 @@ main.an .anillo circle.a{animation:anillo 1s .15s var(--e) both}
 .crono.min{width:auto;padding:7px 8px 7px 16px;border-radius:999px;display:flex;align-items:center;gap:10px}
 .crono.min .cr-mini{display:flex;align-items:baseline;gap:8px;color:#F7F5F0}
 .crono.min .cr-num{font-size:23px}.crono.min .cr-fase{margin:0;font-size:12px}
+
+/* ===== 0.5 ===== */
+.visita.nohecha{background:transparent;box-shadow:none;border-style:dashed;opacity:.72}
+.visita.nohecha .persona .nombre button{text-decoration:line-through;text-decoration-color:rgba(42,40,38,.45)}
+.visita.pasada{border-left:4px solid var(--albero-cl)}
+.hora .est.x{background:var(--piedra-cl);color:var(--sec)}
+.hora .est.p{background:#fdf1d8;color:#8a5a00}
+.hora .est{white-space:normal;max-width:100%;line-height:1.25;text-align:left}
+.cols{grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr))}
+.vis-acc{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:118px}
+.vis-acc .btn{justify-content:center}
+.btn.sec{background:transparent;border:1px solid var(--piedra);box-shadow:none;color:var(--grafito)}
+@media(max-width:600px){.vis-acc{grid-column:1/-1;flex-direction:row;min-width:0}.vis-acc .btn{flex:1;width:auto}}
+.dsem .pts{max-width:100%;overflow:hidden}
+.dsem .nvis{font-size:10.5px;font-weight:600;line-height:7px;color:var(--sec);letter-spacing:.02em}
+.dsem.on .nvis{color:#D8D1C4}
+.dsem .pts i.x{background:transparent;box-shadow:inset 0 0 0 1.3px var(--piedra)}
+.dsem.on .pts i.x{box-shadow:inset 0 0 0 1.3px #8b847a}
+.item.cli .txt{display:flex;flex-direction:column;min-width:0;gap:2px}
+.item.cli .nombre{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.item.cli .meta{display:flex;flex-wrap:wrap;gap:0 6px;font-size:12.5px;color:var(--sec)}
+.item.cli .meta span+span::before{content:"·";margin-right:6px}
+.item.cli .der .chip{white-space:nowrap}
+.item .chev{width:16px;height:16px;color:var(--piedra);flex:none}
+@media(max-width:600px){.item.cli .der .chip .t{display:none}.item.cli .der .chip{padding:4px 6px}.item.cli .der{gap:4px}}
+.vtests{display:flex;flex-direction:column}
+.vt{display:grid;grid-template-columns:minmax(0,1.5fr) 118px minmax(0,1fr) minmax(0,1.3fr) 40px;grid-template-areas:"n in antes c x";gap:6px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--piedra-cl)}
+.vt:first-child{border-top:0}
+.vt-n{grid-area:n;min-width:0}.vt-in{grid-area:in}.vt-antes{grid-area:antes}.vt-c{grid-area:c;min-width:0}.vt-x{grid-area:x}
+.vt-in input{min-height:42px;text-align:center;font-variant-numeric:tabular-nums}
+.vt-cab{display:grid;grid-template-columns:minmax(0,1.5fr) 118px minmax(0,1fr) minmax(0,1.3fr) 40px;gap:12px;font-size:12px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px;border-bottom:1px solid var(--piedra)}
+@media(max-width:700px){.vt{grid-template-columns:minmax(0,1fr) 104px 40px;grid-template-areas:"n n x" "in antes antes" "c c c"}.vt-cab{display:none}.vt-c:empty{display:none}}
+.video{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;margin-top:10px}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.contras{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:2px 12px}
+.contras .casilla{margin-top:4px}
+label.casilla{display:flex;align-items:center;font-size:15px;font-weight:400;color:var(--grafito);text-transform:none;letter-spacing:0;margin:0}
+label.casilla>span{flex:1;min-width:0;line-height:1.35}
+.casilla.v4on{border-color:var(--albero-cl);background:#fbf6ec}
+.v4tit{font:500 22px/1.1 var(--serif);margin:18px 0 2px}
+.v4caja{margin-top:12px;padding-top:4px}
+.v4caja[hidden]{display:none}
+.rejilla>.campo{min-width:0}
+.tabla{table-layout:auto}
+.tabla td,.tabla th{overflow-wrap:anywhere}
+.chips{min-width:0}
+.chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pie-modal{flex-wrap:wrap}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -371,6 +420,7 @@ main.an .anillo circle.a{animation:anillo 1s .15s var(--e) both}
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
   <symbol id="i-pausa" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
   <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
   <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
 </svg>
 <div id="splash" aria-hidden="true"><svg width="104" height="104" viewBox="0 0 120 120"><line x1="6" y1="80" x2="114" y2="80" pathLength="1"/><path d="M6 106 C 50 106 60 36 114 22" pathLength="1"/></svg></div>
@@ -394,7 +444,7 @@ main.an .anillo circle.a{animation:anillo 1s .15s var(--e) both}
 /* Carena · app instalable. Sustituye a google.script.run: las mismas llamadas viajan por HTTPS a la puerta de Carena
    con la llave de este dispositivo. Sin llave, pide el código de vincular. La llave no sale nunca en una dirección. */
 (function () {
-  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.4.0';
+  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.5.0';
   function leer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function poner(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
   function pedir(cuerpo) {
@@ -498,7 +548,7 @@ main.an .anillo circle.a{animation:anillo 1s .15s var(--e) both}
 })();
 </script>
 <script>
-/* Carena · App de campo (cliente) 0.4.0. Sin conexión: los datos se guardan en el iPad y lo registrado viaja en una cola
+/* Carena · App de campo (cliente) 0.5.0. Sin conexión: los datos se guardan en el iPad y lo registrado viaja en una cola
    que se envía sola cuando hay red; lo que aún no ha llegado a Carena se vuelve a aplicar sobre los datos al actualizar.
    La línea roja: endurecer es libre; relajar pide motivo y confirmación (y el servidor lo vuelve a comprobar). */
 var App = (function () {
@@ -507,7 +557,7 @@ var App = (function () {
   var I = {};
   var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var VERSION = '0.4.0', T0 = Date.now();
+  var VERSION = '0.5.0', T0 = Date.now();
 
   // ---------- Utilidades ----------
   var memoria = {};
@@ -678,6 +728,7 @@ var App = (function () {
       var h = leer(K.hechas, {}); if (h[op.datos.sesion.id]) { h[op.datos.sesion.id].guardada = true; guardar(K.hechas, h); }
       if (r.revisar && r.revisar.length) toast('Pasan a «revisar»: ' + r.revisar.map(nombreEj).join(', '));
     }
+    if (op.tipo === 'visita' && r.horario) toast('Horario: ' + r.horario);
     if (op.tipo === 'manana' && r.propuesta) toast('Dos pruebas buenas: tienes la propuesta de «tolerado» en Pendientes');
   }
   function describirOp(o) {
@@ -689,6 +740,7 @@ var App = (function () {
     if (o.tipo === 'valoracion') return 'Valoración · ' + nombreCli(d.cliente);
     if (o.tipo === 'catalogo') return 'Catálogo' + (d.accion === 'nuevo' ? ' · ejercicio nuevo' : '');
     if (o.tipo === 'cliente') return 'Datos de ' + nombreCli(d.cliente);
+    if (o.tipo === 'visita') return (d.resultado ? 'No se hizo · ' : 'Visita deshecha · ') + (d.ids || []).map(function (id) { var a = (S.snap.agenda || []).filter(function (x) { return x.id === id; })[0]; return a ? nombreCorto(a.cliente) : id; }).join(', ');
     if (o.tipo === 'consentimiento') return 'Documentos firmados · ' + (d.items || []).length + ' cliente' + ((d.items || []).length > 1 ? 's' : '');
     return o.tipo;
   }
@@ -700,7 +752,7 @@ var App = (function () {
     'Condiciones': { 'Condición': 'condicion', 'Etiqueta': 'etiqueta', 'Zona': 'zona', 'Lado': 'lado', 'Estado': 'estado', 'Notas': 'notas', 'Fuente': 'fuente', 'Medicación': 'medicacion', 'Desde': 'desde', 'Confirmada el': 'confirmada' },
     'Límites': { 'Tipo': 'tipo', 'Valor': 'valor', 'Unidad': 'unidad', 'Mano': 'mano', 'Tipo de carga': 'tipoCarga', 'Estado': 'estado', 'Motivo': 'motivo', 'Origen': 'origen', 'Vigente desde': 'desde', 'Revisar el': 'revisar' },
     'Tolerancia': { 'Ejercicio': 'ejercicio', 'Condición': 'condicion', 'Estado': 'estado', 'Volver a probar el': 'volver', 'Notas': 'notas', 'Propuesta': 'propuesta', 'Pruebas buenas': 'buenas', 'Desde': 'desde' },
-    'Ejercicios': { 'Nombre': 'nombre', 'Abreviatura': 'abrev', 'Patrón': 'patron', 'Tipo': 'tipo', 'Posición': 'posicion', 'Material': 'material', 'Alternativas': 'alternativas', 'Unilateral': 'unilateral', 'Nivel': 'nivel', 'Impacto': 'impacto', 'Muñeca': 'muneca', 'Agarre': 'agarre', 'Por encima de la cabeza': 'oh', 'Flexión de columna con carga': 'flexion', 'Presión intraabdominal': 'pia', 'Equilibrio': 'equilibrio', 'Ruido': 'ruido', 'Espacio': 'espacio', 'Dosis típica': 'dosis', 'Consignas': 'consignas', 'Estado': 'estado', 'Notas': 'notas' },
+    'Ejercicios': { 'Vídeo': 'video', 'Nombre': 'nombre', 'Abreviatura': 'abrev', 'Patrón': 'patron', 'Tipo': 'tipo', 'Posición': 'posicion', 'Material': 'material', 'Alternativas': 'alternativas', 'Unilateral': 'unilateral', 'Nivel': 'nivel', 'Impacto': 'impacto', 'Muñeca': 'muneca', 'Agarre': 'agarre', 'Por encima de la cabeza': 'oh', 'Flexión de columna con carga': 'flexion', 'Presión intraabdominal': 'pia', 'Equilibrio': 'equilibrio', 'Ruido': 'ruido', 'Espacio': 'espacio', 'Dosis típica': 'dosis', 'Consignas': 'consignas', 'Estado': 'estado', 'Notas': 'notas' },
     'Clientes': { 'Nombre': 'nombre', 'Estado': 'estado', 'Fecha de nacimiento': 'nacimiento', 'Sexo': 'sexo', 'Teléfono': 'telefono', 'Email': 'email', 'Sesiones por semana': 'sesionesSemana', 'Pareja': 'pareja', 'Horario': 'horario', 'Objetivos': 'objetivos', 'Consentimiento firmado': 'consentimiento', 'Notas': 'notas' }
   };
   var TABLA_SNAP = { 'Condiciones': 'condiciones', 'Límites': 'limites', 'Tolerancia': 'tolerancia' };
@@ -733,9 +785,11 @@ var App = (function () {
       if (!s.clientes.some(function (x) { return x.id === d.cliente.id; })) s.clientes.push(d.cliente);
       if (d.cliente.pareja) s.clientes.forEach(function (x) { if (x.id === d.cliente.pareja) x.pareja = d.cliente.id; });
       (d.condiciones || []).forEach(function (x) { if (!s.condiciones.some(function (y) { return y.id === x.id; })) s.condiciones.push(x); });
+      (d.limites || []).forEach(function (x) { if (!s.limites.some(function (y) { return y.id === x.id; })) s.limites.push(x); });
       if (d.documento && !(s.documentos || []).some(function (y) { return y.id === d.documento.id; })) (s.documentos = s.documentos || []).push(d.documento);
       s.valoraciones[d.cliente.id] = s.valoraciones[d.cliente.id] || { ultima: null, anteriores: [], semanas: 0, toca: '' };
     }
+    else if (op.tipo === 'visita') (s.agenda || []).forEach(function (a) { if ((d.ids || []).indexOf(a.id) >= 0) { a.resultado = d.resultado || ''; a.motivo = d.resultado ? d.motivo || '' : ''; } });
     else if (op.tipo === 'consentimiento') (d.items || []).forEach(function (it, k) {
       (d.tipos || ['consentimiento informado']).forEach(function (tipo, j) {
         var id = 'local-' + op.id + '-' + k + '-' + j;
@@ -822,12 +876,13 @@ var App = (function () {
 
   // ---------- Hoy ----------
   function visitasDe(dia) {
-    var vistas = {}, out = [];
+    var porClave = {}, out = [];
     S.snap.agenda.filter(function (a) { return a.fecha === dia; }).forEach(function (a) {
-      var k = a.fecha + a.inicio + [a.cliente, a.con].filter(Boolean).sort().join('+');
-      if (vistas[k]) return; vistas[k] = true;
-      out.push({ fecha: a.fecha, inicio: a.inicio, fin: a.fin, clientes: [a.cliente].concat(a.con ? [a.con] : []), etiqueta: a.etiqueta });
+      var k = a.fecha + a.inicio + [a.cliente].concat(a.con ? a.con.split(/\s*,\s*/) : []).sort().join('+'), vi = porClave[k];
+      if (!vi) { vi = porClave[k] = { fecha: a.fecha, inicio: a.inicio, fin: a.fin, clientes: [a.cliente].concat(a.con ? a.con.split(/\s*,\s*/) : []), etiqueta: a.etiqueta, ids: [], res: [], motivo: '' }; out.push(vi); }
+      vi.ids.push(a.id); vi.res.push(a.resultado || ''); if (a.motivo) vi.motivo = a.motivo;
     });
+    out.forEach(function (vi) { vi.resultado = vi.res.length && vi.res.every(function (r) { return r === 'no hecha'; }) ? 'no hecha' : ''; });
     return out;
   }
   function sesionDe(cid) { return S.snap.sesiones.plan[cid] || null; }
@@ -835,6 +890,7 @@ var App = (function () {
     var h = I.hechas, out = null;
     Object.keys(h).forEach(function (k) { if (h[k].cliente === cid && h[k].fecha === dia) out = h[k]; });
     (S.snap.sesiones.app || []).forEach(function (s) { if (s.cliente === cid && s.fecha === dia) out = out || { rpe: s.rpe, guardada: true, id: s.id }; });
+    (S.snap.sesiones.hechas || []).forEach(function (s) { if (s.cliente === cid && s.fecha === dia) out = out || { rpe: s.rpe, guardada: true, id: s.id, origen: s.origen }; });
     return out;
   }
   function tocaValorar(cid) { var v = (S.snap.valoraciones || {})[cid]; return v && v.toca ? v.toca : ''; }
@@ -890,13 +946,20 @@ var App = (function () {
   function aMin(h) { var p = String(h || '').split(':'); return Number(p[0]) * 60 + Number(p[1] || 0); }
   function enTexto(m) { return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   function lunesDe(iso) { var p = iso.split('-').map(Number); return sumar(iso, -((new Date(p[0], p[1] - 1, p[2]).getDay() + 6) % 7)); }
-  function visitaHecha(vi, dia) { return vi.clientes.every(function (cid) { return registradaHoy(cid, dia); }); }
-  function htmlSemana(dia) {                             // la agenda guardada llega de 3 días atrás a 10 adelante: fuera de eso el día sale apagado
-    var l = lunesDe(dia), hoy = hoyIso(), base = S.snap.hoy || hoy, min = sumar(base, -3), max = sumar(base, 10), out = [];
+  function estadoVisita(vi, dia) {
+    if (vi.clientes.every(function (cid) { return registradaHoy(cid, dia); })) return 'hecha';
+    return vi.resultado === 'no hecha' ? 'nohecha' : '';
+  }
+  function visitaHecha(vi, dia) { return estadoVisita(vi, dia) === 'hecha'; }
+  function enCorto(m) { return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) : ''); }
+  function htmlSemana(dia) {                             // la agenda guardada llega de 7 días atrás a 10 adelante: fuera de eso el día sale apagado
+    var l = lunesDe(dia), hoy = hoyIso(), base = S.snap.hoy || hoy, min = sumar(base, -7), max = sumar(base, 10), out = [];
     for (var i = 0; i < 7; i++) {
-      var f = sumar(l, i), v = visitasDe(f), fuera = f < min || f > max;
-      var pts = v.slice(0, 5).map(function (vi) { return '<i' + (visitaHecha(vi, f) ? ' class="v"' : '') + '></i>'; }).join('') + (v.length > 5 ? '<i class="mas"></i>' : '');
-      out.push('<button class="dsem' + (f === dia ? ' on' : '') + (f === hoy ? ' hoy' : '') + (fuera ? ' fuera' : '') + '" onclick="App.diaEn(\'' + f + '\')" aria-label="' + esc(fechaLarga(f)) + (fuera ? '' : ', ' + v.length + (v.length === 1 ? ' visita' : ' visitas')) + '"' +
+      var f = sumar(l, i), v = visitasDe(f), fuera = f < min || f > max, est = v.map(function (vi) { return estadoVisita(vi, f); });
+      var activas = est.filter(function (e) { return e !== 'nohecha'; }).length, nH = est.filter(function (e) { return e === 'hecha'; }).length;
+      var pts = v.length <= 4 ? est.map(function (e) { return '<i' + (e === 'hecha' ? ' class="v"' : e === 'nohecha' ? ' class="x"' : '') + '></i>'; }).join('')
+        : '<span class="nvis">' + (nH ? nH + '/' : '') + activas + '</span>';
+      out.push('<button class="dsem' + (f === dia ? ' on' : '') + (f === hoy ? ' hoy' : '') + (fuera ? ' fuera' : '') + '" onclick="App.diaEn(\'' + f + '\')" aria-label="' + esc(fechaLarga(f)) + (fuera ? '' : ', ' + activas + (activas === 1 ? ' visita' : ' visitas') + (nH ? ', ' + nH + ' registradas' : '')) + '"' +
         (f === dia ? ' aria-current="date"' : '') + '><small>' + 'LMXJVSD'.charAt(i) + '</small><b>' + Number(f.slice(8)) + '</b><span class="pts">' + pts + '</span></button>');
     }
     return '<div class="fila-dia semana"><button class="btn mini" onclick="App.dia(-7)" aria-label="Semana anterior">‹</button><div class="dias">' + out.join('') + '</div><button class="btn mini" onclick="App.dia(7)" aria-label="Semana siguiente">›</button></div>';
@@ -904,34 +967,69 @@ var App = (function () {
   function pintarHoy() {
     $('titulo').textContent = 'Hoy';
     var hoy = hoyIso(), dia = S.dia || (S.dia = hoy), v = visitasDe(dia), h = [], esHoy = dia === hoy, reloj = new Date(), ahora = reloj.getHours() * 60 + reloj.getMinutes();
-    var est = v.map(function (vi) { return visitaHecha(vi, dia) ? 'hecha' : esHoy && ahora >= aMin(vi.inicio) && ahora < aMin(vi.fin) ? 'ahora' : ''; }), sig = -1;
+    var est = v.map(function (vi) {
+      var e = estadoVisita(vi, dia); if (e) return e;
+      if (dia < hoy || (esHoy && ahora >= aMin(vi.fin))) return 'pasada';
+      return esHoy && ahora >= aMin(vi.inicio) ? 'ahora' : '';
+    }), sig = -1;
     if (esHoy) for (var k = 0; k < v.length; k++) if (!est[k] && aMin(v[k].inicio) > ahora) { sig = k; break; }
-    var nH = est.filter(function (e) { return e === 'hecha'; }).length, dd = dias(hoy, dia), fl = fechaLarga(dia);
+    var cuenta = function (x) { return est.filter(function (e) { return e === x; }).length; };
+    var nH = cuenta('hecha'), nN = cuenta('nohecha'), nP = cuenta('pasada'), activas = v.length - nN, dd = dias(hoy, dia), fl = fechaLarga(dia);
     var cuando = dd === 0 ? 'Hoy' : dd === 1 ? 'Mañana' : dd === -1 ? 'Ayer' : dd > 0 ? 'Dentro de ' + dd + ' días' : 'Hace ' + (-dd) + ' días';
-    var res = !v.length ? 'Sin visitas en el horario' : v.length + (v.length === 1 ? ' visita' : ' visitas') + (nH ? ' · ' + nH + (nH === 1 ? ' registrada' : ' registradas') : '') +
-      (sig >= 0 ? ' · siguiente a las ' + esc(v[sig].inicio) + ', en ' + enTexto(aMin(v[sig].inicio) - ahora) : esHoy && nH === v.length ? ' · día completo' : '');
+    var res = !v.length ? 'Sin visitas en el horario' : activas + (activas === 1 ? ' visita' : ' visitas') + (nH ? ' · ' + nH + (nH === 1 ? ' registrada' : ' registradas') : '') +
+      (nN ? ' · ' + nN + ' no se ' + (nN === 1 ? 'hizo' : 'hicieron') : '') + (nP ? ' · <b>' + nP + ' sin registrar</b>' : '') +
+      (sig >= 0 ? ' · siguiente a las ' + esc(v[sig].inicio) + ', en ' + enTexto(aMin(v[sig].inicio) - ahora) : esHoy && activas && nH === activas ? ' · día completo' : '');
     h.push('<div class="hero"><div><div class="hero-sub">' + cuando + (esHoy ? '' : ' · <button class="enlace" onclick="App.dia(0)">Volver a hoy</button>') + '</div><h1>' + esc(fl.charAt(0).toUpperCase() + fl.slice(1)) + '</h1><div class="hero-res">' + res + '</div></div>' +
-      (v.length ? '<svg class="anillo" viewBox="0 0 64 64" width="66" height="66" role="img" aria-label="' + nH + ' de ' + v.length + ' visitas registradas"><circle cx="32" cy="32" r="27"/>' + (nH ? '<circle class="a" cx="32" cy="32" r="27" pathLength="100" style="stroke-dasharray:' + Math.round(100 * nH / v.length) + ' 100"/>' : '') + '<text x="32" y="37.5" text-anchor="middle">' + nH + '/' + v.length + '</text></svg>' : '') + '</div>');
+      (activas ? '<svg class="anillo" viewBox="0 0 64 64" width="66" height="66" role="img" aria-label="' + nH + ' de ' + activas + ' visitas registradas"><circle cx="32" cy="32" r="27"/>' + (nH ? '<circle class="a" cx="32" cy="32" r="27" pathLength="100" style="stroke-dasharray:' + Math.round(100 * nH / activas) + ' 100"/>' : '') + '<text x="32" y="37.5" text-anchor="middle">' + nH + '/' + activas + '</text></svg>' : '') + '</div>');
     if (esHoy) h.push(htmlPreguntas(preguntasVisibles()));
     h.push(htmlSemana(dia));
     if (!v.length) h.push('<div class="vacio">No tienes visitas en tu horario este día.</div>');
     v.forEach(function (vi, k) {
+      var e = est[k] || (k === sig ? 'sig' : ''), ids = vi.ids.join(','), lista = vi.clientes.join(',');
       var per = vi.clientes.map(function (cid) {
         var c = I.C[cid] || { nombre: cid }, ses = sesionDe(cid), reg = registradaHoy(cid, dia);
+        var estado = reg ? '<div class="chips"><span class="chip v">' + ico('check') + 'Registrada' + (reg.origen === 'ficha' ? ' en la ficha' : '') + (reg.rpe !== null && reg.rpe !== undefined && reg.rpe !== '' ? ' · RPE ' + fmtNum(reg.rpe) : '') + (reg.guardada ? '' : ' · pendiente de subir') + '</span></div>'
+          : e === 'nohecha' ? '<div class="chips"><span class="chip">No se hizo' + (vi.motivo ? ' · ' + esc(vi.motivo) : '') + '</span></div>' : resumenSesion(ses);
         return '<div class="persona"><div class="nombre"><button onclick="App.ir(\'cliente\',\'' + cid + '\')" style="font-weight:600;text-align:left">' + esc(c.nombre || cid) + '</button> <span class="sub">' + esc(cid) + (c.nacimiento ? ' · ' + edad(c.nacimiento) + ' años' : '') + '</span></div>' +
-          (reg ? '<div class="chips"><span class="chip v">' + ico('check') + 'Registrada' + (reg.rpe !== null && reg.rpe !== undefined && reg.rpe !== '' ? ' · RPE ' + fmtNum(reg.rpe) : '') + (reg.guardada ? '' : ' · pendiente de subir') + '</span></div>' : resumenSesion(ses)) +
-          chipsCliente(cid, ses) + '</div>';
+          estado + (e === 'nohecha' || reg ? '' : chipsCliente(cid, ses)) + '</div>';
       }).join('');
-      var e = est[k] || (k === sig ? 'sig' : '');
-      var marca = e === 'hecha' ? '<span class="est v">' + ico('check') + '</span>' : e === 'ahora' ? '<span class="est o">Ahora</span>' : e === 'sig' ? '<span class="est">en ' + enTexto(aMin(vi.inicio) - ahora) + '</span>' : '';
-      h.push('<div class="card visita' + (e ? ' ' + e : '') + '"><div class="hora">' + esc(vi.inicio) + '<small>' + esc(vi.fin) + '</small>' + marca + '</div><div>' + per + '</div><div>' +
-             (e === 'hecha' ? '' : '<button class="btn pri" onclick="App.empezar(\'' + vi.clientes.join(',') + '\')">Empezar</button>') + '</div></div>');
+      var marca = e === 'hecha' ? '<span class="est v">' + ico('check') + '</span>' : e === 'nohecha' ? '<span class="est x">No</span>' : e === 'pasada' ? '<span class="est p">Sin registrar</span>'
+        : e === 'ahora' ? '<span class="est o">Ahora</span>' : e === 'sig' ? '<span class="est">en ' + enCorto(aMin(vi.inicio) - ahora) + '</span>' : '';
+      var acc = e === 'hecha' ? '' : e === 'nohecha' ? '<button class="btn mini sec" onclick="App.deshacerVisita(\'' + ids + '\')">' + ico('deshacer') + 'Deshacer</button>'
+        : e === 'pasada' ? '<button class="btn pri" onclick="App.empezar(\'' + lista + '\')">Registrar</button><button class="btn mini sec" onclick="App.noSeHizo(\'' + ids + '\')">No se hizo</button>'
+        : '<button class="btn pri" onclick="App.empezar(\'' + lista + '\')">Empezar</button><button class="btn mini sec" onclick="App.noSeHizo(\'' + ids + '\',1)">' + (dia > hoy ? 'No se hará' : 'No se hizo') + '</button>';
+      h.push('<div class="card visita' + (e ? ' ' + e : '') + '"><div class="hora">' + esc(vi.inicio) + '<small>' + esc(vi.fin) + '</small>' + marca + '</div><div>' + per + '</div>' + (acc ? '<div class="vis-acc">' + acc + '</div>' : '<div></div>') + '</div>');
     });
     h.push('<div style="text-align:center;margin-top:18px"><button class="btn" onclick="App.sinCita()">Sesión sin cita</button></div>');
     $('main').innerHTML = h.join('');
   }
   function cambiarDia(n) { S.dia = n === 0 ? hoyIso() : sumar(S.dia || hoyIso(), n); pintar(); animar(n > 0 ? 'an-dia-a' : n < 0 ? 'an-dia-b' : 'an-sube'); }
   function diaEn(iso) { if (iso === S.dia) return; var d = dias(S.dia || hoyIso(), iso); S.dia = iso; pintar(); animar(d > 0 ? 'an-dia-a' : 'an-dia-b'); }
+  function visitaDeIds(ids) { var a = (S.snap.agenda || []).filter(function (x) { return ids.indexOf(x.id) >= 0; }); return a; }
+  function noSeHizo(lista, antes) {
+    var ids = lista.split(','), ag = visitaDeIds(ids); if (!ag.length) return;
+    var quien = ag.map(function (a) { return nombreCorto(a.cliente); }).filter(function (x, i, l) { return l.indexOf(x) === i; }).join(' y ');
+    var motivos = S.snap.motivosVisita || ['cancela el cliente', 'cancelo yo', 'se recupera otro día', 'festivo o vacaciones', 'otro'];
+    S.nsh = { ids: ids, motivo: '' };
+    modal('<h3>' + (ag[0].fecha > hoyIso() ? 'No se hará' : 'No se hizo') + '</h3><div class="sub">' + esc(quien) + ' · ' + esc(fechaLarga(ag[0].fecha)) + ' · ' + esc(ag[0].inicio) + '</div>' +
+      '<div class="opciones" id="nsh-op" style="margin-top:12px">' + motivos.map(function (m, i) { return '<button class="op" onclick="App.nshMotivo(' + i + ')">' + esc(m.charAt(0).toUpperCase() + m.slice(1)) + '</button>'; }).join('') + '</div>' +
+      '<div class="campo"><label for="nsh-nota">Nota (opcional; obligatoria si es «otro»)</label><input type="text" id="nsh-nota" placeholder="p. ej. se recupera el jueves a las 18:00"></div>' +
+      '<div class="nota n">Queda en Carena y se tacha en tu horario con una nota. Se puede deshacer.</div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" id="nsh-ok" disabled onclick="App.guardarNoSeHizo()">Guardar</button></div>');
+  }
+  function nshMotivo(i) {
+    var motivos = S.snap.motivosVisita || ['cancela el cliente', 'cancelo yo', 'se recupera otro día', 'festivo o vacaciones', 'otro'];
+    S.nsh.motivo = motivos[i];
+    [].forEach.call(document.querySelectorAll('#nsh-op .op'), function (b, k) { b.classList.toggle('on', k === i); });
+    $('nsh-ok').disabled = false;
+  }
+  function guardarNoSeHizo() {
+    var n = S.nsh, nota = val('nsh-nota').trim(); if (!n || !n.motivo) return;
+    if (n.motivo === 'otro' && !nota) { toast('Escribe por qué'); return; }
+    hacer('visita', { ids: n.ids, resultado: 'no hecha', motivo: n.motivo + (nota ? ' · ' + nota : '') });
+    S.nsh = null; cerrarModal(); pintar(); toast('Apuntado' + (enLinea() ? '' : ' · se sube en cuanto haya red'));
+  }
+  function deshacerVisita(lista) { hacer('visita', { ids: lista.split(','), resultado: '' }); pintar(); toast('La visita vuelve a estar prevista'); }
   function sinCita() {
     var act = S.snap.clientes.filter(function (c) { return c.estado === 'activo' || c.estado === 'estacional'; }).sort(function (a, b) { return a.nombre < b.nombre ? -1 : 1; });
     modal('<h3>Sesión sin cita</h3><div class="sub">Elige uno o dos clientes (pareja).</div><div class="lista-ej" id="sc">' + act.map(function (c) {
@@ -1066,7 +1164,7 @@ var App = (function () {
       '<button style="text-align:left" onclick="App.marcar(\'' + cid + '\',' + i + ')"><div class="n">' + esc(nombre) + etiqueta + '</div><div class="d">' + descFila(f) +
       (hi ? ' · <span>última: ' + esc([hi.dosis, hi.carga].filter(Boolean).join(' · ') || '—') + ' (' + fechaCorta(hi.ultima) + ')</span>' : ' · <span>primera vez</span>') + '</div>' +
       (extra.length ? '<div class="chips">' + extra.join('') + '</div>' : '') + '</button>' +
-      '<div class="acc"><button class="icono" onclick="App.cambiar(\'' + cid + '\',' + i + ')" aria-label="Cambiar">' + ico('lapiz') + '</button><button class="icono" onclick="App.quitar(\'' + cid + '\',' + i + ')" aria-label="Quitar">' + ico(f.estado === 'quitada' ? 'deshacer' : 'x') + '</button></div></div>';
+      '<div class="acc">' + (e && e.video ? '<button class="icono" onclick="App.verVideo(\'' + e.id + '\')" aria-label="Ver el vídeo">' + ico('play') + '</button>' : '') + '<button class="icono" onclick="App.cambiar(\'' + cid + '\',' + i + ')" aria-label="Cambiar">' + ico('lapiz') + '</button><button class="icono" onclick="App.quitar(\'' + cid + '\',' + i + ')" aria-label="Quitar">' + ico(f.estado === 'quitada' ? 'deshacer' : 'x') + '</button></div></div>';
   }
   function repetir(cid) {
     toque(); var u = S.snap.sesiones.ultima[cid]; if (!u) return;
@@ -1362,9 +1460,10 @@ var App = (function () {
     var pu = S.snap.puente;
     if (pu) {
       var u = pu.ultima, filas = u ? Object.keys(u.clientes).map(function (cid) { var x = u.clientes[cid]; return '<tr><td>' + esc(nombreCli(cid)) + '</td><td>' + x.sesiones + '</td><td class="ok-txt">' + x.iguales + '</td><td class="' + (x.distintas ? 'mal-txt' : '') + '">' + x.distintas + '</td><td class="' + (x.soloFicha ? 'mal-txt' : '') + '">' + x.soloFicha + '</td><td class="sub">' + x.soloApp + '</td></tr>'; }).join('') : '';
-      h.push(bloque('puente', 'Puente a v4 (en sombra)', 'Compara cada mañana lo registrado en la app con la ficha original de ' + pu.piloto.map(nombreCorto).join(', ') + '. No escribe nada en las fichas. «Solo en la ficha» es lo que más importa revisar.',
-        u ? '<table class="tabla" style="margin-top:10px"><tr><th>Cliente</th><th>Sesiones</th><th>Iguales</th><th>Distintas</th><th>Solo en la ficha</th><th>Solo en la app</th></tr>' + (filas || '<tr><td colspan="6" class="sub">Sin sesiones del piloto registradas en la app en los últimos ' + u.dias + ' días.</td></tr>') + '</table><div class="sub" style="margin-top:6px">Comparado el ' + fechaMedia(u.fecha) + ' ' + u.fecha.slice(11) + (pu.hoja ? ' · <a href="' + esc(pu.hoja) + '" target="_blank">ver celda a celda</a>' : '') + '</div>'
-          : '<div class="sub" style="margin-top:8px">Aún no ha comparado nada (empieza mañana a las 07:00).</div>'));
+      var esc4 = u && u.escritura, txt4 = esc4 && !esc4.error ? ' Última pasada: ' + esc4.escritas + (esc4.escritas === 1 ? ' sesión escrita' : ' sesiones escritas') + (esc4.saltadas ? ' · ' + esc4.saltadas + ' sin escribir (mira «Escrituras»)' : '') + '.' : esc4 && esc4.error ? ' Último error: ' + esc4.error : '';
+      h.push(bloque('puente', 'Puente a v4', 'Tres veces al día lleva a la ficha de v4 lo que cierras en la app (fecha, RPE, rondas, cambios) para que v4 siga planificando, y después lo compara celda a celda. Solo escribe en sesiones que la ficha aún no tiene registradas.' + txt4 + ' «Solo en la ficha» es lo que más importa revisar.',
+        u ? '<table class="tabla" style="margin-top:10px"><tr><th>Cliente</th><th>Sesiones</th><th>Iguales</th><th>Distintas</th><th>Solo en la ficha</th><th>Solo en la app</th></tr>' + (filas || '<tr><td colspan="6" class="sub">Sin sesiones registradas en la app en los últimos ' + u.dias + ' días.</td></tr>') + '</table><div class="sub" style="margin-top:6px">Comparado el ' + fechaMedia(u.fecha) + ' ' + u.fecha.slice(11) + (pu.hoja ? ' · <a href="' + esc(pu.hoja) + '" target="_blank">ver celda a celda</a>' : '') + '</div>'
+          : '<div class="sub" style="margin-top:8px">Aún no ha pasado (07:00, 15:00 y 22:00).</div>'));
     }
     $('main').innerHTML = h.join('');
   }
@@ -1425,8 +1524,14 @@ var App = (function () {
       .sort(function (a, b) { return (a.estado === 'activo' ? 0 : 1) - (b.estado === 'activo' ? 0 : 1) || (a.nombre < b.nombre ? -1 : 1); });
     $('main').innerHTML = '<div class="buscar"><input type="search" placeholder="Buscar cliente" value="' + esc(S.filtro) + '" oninput="App.filtro(this.value)"><button class="btn" onclick="App.ir(\'alta\')">' + ico('alta') + 'Alta</button></div><div class="caja">' +
       lista.map(function (c) {
-        var marcas = []; if (!c.consentimiento) marcas.push('<span class="chip a">' + ico('doc') + 'sin consentimiento</span>'); if (tocaValorar(c.id)) marcas.push('<span class="chip z">' + ico('regla') + 'valorar</span>'); if ((I.av[c.id] || []).length) marcas.push('<span class="chip a">' + ico('alerta') + (I.av[c.id] || []).length + '</span>');
-        return '<button class="item" onclick="App.ir(\'cliente\',\'' + c.id + '\')"><span class="izq">' + avatar(c) + '<span><span class="nombre">' + esc(c.nombre) + '</span> <span class="sub">' + c.id + ' · ' + esc(c.estado) + (c.pareja ? ' · pareja de ' + esc(nombreCorto(c.pareja)) : '') + '</span></span></span><span class="der">' + marcas.join('') + '<span class="sub">›</span></span></button>';
+        var marcas = [], nav = (I.av[c.id] || []).length;
+        if (!c.consentimiento) marcas.push('<span class="chip a" title="Sin consentimiento">' + ico('doc') + '<span class="t">sin consentimiento</span></span>');
+        if (tocaValorar(c.id)) marcas.push('<span class="chip z" title="Toca valorar">' + ico('regla') + '<span class="t">valorar</span></span>');
+        if (nav) marcas.push('<span class="chip a" title="' + nav + ' avisos">' + ico('alerta') + nav + '</span>');
+        var meta = ['<span>' + esc(c.id) + '</span>'];
+        if (c.estado && c.estado !== 'activo') meta.push('<span>' + esc(c.estado) + '</span>');
+        if (c.pareja) meta.push('<span>con ' + esc(nombreCorto(c.pareja)) + '</span>');
+        return '<button class="item cli" onclick="App.ir(\'cliente\',\'' + c.id + '\')"><span class="izq">' + avatar(c) + '<span class="txt"><span class="nombre">' + esc(c.nombre) + '</span><span class="meta">' + meta.join('') + '</span></span></span><span class="der">' + marcas.join('') + ico('chev', 'chev') + '</span></button>';
       }).join('') + '</div>';
   }
   function filtro(t) { S.filtro = t; var el = document.activeElement, pos = el && el.selectionStart; pintarClientes(); var i = document.querySelector('.buscar input'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (e) {} } }
@@ -1700,12 +1805,13 @@ var App = (function () {
       '<div class="campo"><label>Tipo</label><select onchange="App.valSet(\'tipo\',this.value)">' + opts(['inicial', 'seguimiento', 'final'], V.tipo) + '</select></div></div>' +
       '<div class="campo"><label>Protocolo (lo que cambia el resultado: silla, peso del curl, lado…)</label><input type="text" value="' + esc(V.protocolo) + '" oninput="App.valSet(\'protocolo\',this.value)"></div>' +
       (u ? '<div class="sub" style="margin-top:8px">Batería de la última valoración (' + fechaMedia(u.fecha) + ') ya preparada.' + (v.toca ? ' ' + esc(v.toca) + '.' : '') + '</div>' : '<div class="sub" style="margin-top:8px">Sin valoración anterior: añade los tests de la batería.</div>') + '</div>';
-    h += '<div class="card"><table class="tabla"><tr><th>Test</th><th style="width:130px">Hoy</th><th>Antes</th><th>Cambio</th><th></th></tr>' + V.filas.map(function (f, i) {
-      var t = I.T[f.test] || {}, it = interpretar(f.test, f.valor, f.previo);
-      return '<tr><td><b>' + esc(t.nombre || f.texto || f.test) + '</b>' + (f.lado ? ' <span class="sub">(' + esc(f.lado) + ')</span>' : '') + '<div class="sub">' + esc(f.unidad) + (t.mejor ? ' · ' + esc(t.mejor) : '') + '</div></td>' +
-        '<td><input type="text" inputmode="decimal" value="' + esc(f.valor) + '" oninput="App.valFila(' + i + ',this.value)" style="min-height:40px"></td><td class="sub">' + (f.previo !== undefined && f.previo !== null && f.previo !== '' ? fmtNum(f.previo) + '<br>' + fechaCorta(f.fechaPrevio) : '—') + '</td><td id="vi-' + i + '">' + it.html + '</td>' +
-        '<td><button class="icono" onclick="App.valQuitar(' + i + ')" aria-label="Quitar">' + ico('x') + '</button></td></tr>';
-    }).join('') + '</table>' + (V.filas.length ? '' : '<div class="vacio">Sin tests todavía</div>') +
+    h += '<div class="card">' + (V.filas.length ? '<div class="vt-cab"><span>Test</span><span>Hoy</span><span>Antes</span><span>Cambio</span><span></span></div>' : '') + '<div class="vtests">' + V.filas.map(function (f, i) {
+      var t = I.T[f.test] || {}, it = interpretar(f.test, f.valor, f.previo), hay = f.previo !== undefined && f.previo !== null && f.previo !== '';
+      return '<div class="vt"><div class="vt-n"><b>' + esc(t.nombre || f.texto || f.test) + '</b>' + (f.lado ? ' <span class="sub">(' + esc(f.lado) + ')</span>' : '') + '<div class="sub">' + esc(f.unidad) + (t.mejor ? ' · ' + esc(t.mejor) : '') + '</div></div>' +
+        '<div class="vt-in"><input type="text" inputmode="decimal" aria-label="Hoy: ' + esc(t.nombre || f.texto || f.test) + '" placeholder="Hoy" value="' + esc(f.valor) + '" oninput="App.valFila(' + i + ',this.value)"></div>' +
+        '<div class="vt-antes sub">' + (hay ? 'Antes <b>' + fmtNum(f.previo) + '</b> · ' + fechaCorta(f.fechaPrevio) : 'Sin dato anterior') + '</div><div class="vt-c" id="vi-' + i + '">' + it.html + '</div>' +
+        '<button class="icono vt-x" onclick="App.valQuitar(' + i + ')" aria-label="Quitar">' + ico('x') + '</button></div>';
+    }).join('') + '</div>' + (V.filas.length ? '' : '<div class="vacio">Sin tests todavía</div>') +
       '<div class="acciones"><button class="btn mini" onclick="App.valAnadir()">' + ico('mas') + 'Añadir test</button></div></div>' +
       '<div class="card"><div class="campo" style="margin-top:0"><label>Notas</label><textarea oninput="App.valSet(\'notas\',this.value)">' + esc(V.notas) + '</textarea></div>' +
       '<div class="nota n">El cambio solo se da por real si supera el MDC95 del test (error de medida). Sin MDC95 en el catálogo, la app no lo interpreta.</div>' +
@@ -1811,18 +1917,47 @@ var App = (function () {
       '<div class="campo"><label>Pareja (si entrena con alguien)</label><select id="a-pareja">' + opts(otros, '', 'Entrena solo') + '</select></div><div class="campo"><label>Cómo lo escribes en tu horario</label><input type="text" id="a-etq" placeholder="Para que salga en Hoy"></div>' +
       '<div class="campo"><label>Días, hora y duración</label><input type="text" id="a-hor" placeholder="L y X 10:00, 60 min"></div><div class="campo"><label>Consentimiento firmado el</label><input type="date" id="a-cons"></div></div>' +
       '<div class="campo"><label>Objetivos</label><textarea id="a-obj"></textarea></div><div class="campo"><label>Condiciones que cuenta (una por línea; entran «por confirmar»)</label><textarea id="a-cond" placeholder="Rodilla derecha operada (2024)&#10;Tensión alta con medicación"></textarea></div>' +
-      '<div class="nota n">Crea el código siguiente, su carpeta en «1 Clientes/Activos» y sus condiciones por confirmar. Si después lo das de alta en el PANEL de v4 con el mismo nombre, la noche lo enlaza a este código (no lo duplica). Con el consentimiento firmado, sube la foto desde su ficha (Documento).</div>' +
+      htmlAltaV4() +
+      '<div class="nota n">Crea el código siguiente, su carpeta en «1 Clientes/Activos» y sus condiciones por confirmar. Con «también en v4»: su ficha, su fila en PERFILES y en el PANEL, y en Carena su techo de RPE, límites y contraindicaciones; la sincronización enlaza la ficha a este código (no lo duplica). Su primer mes lo generas en v4, como siempre. Con el consentimiento firmado, sube la foto desde su ficha (Documento).</div>' +
       '<div id="a-estado"></div><div class="pie-modal"><button class="btn pri" id="a-ok" onclick="App.guardarAlta()">' + ico('alta') + 'Dar de alta</button></div></div>';
   }
+  function htmlAltaV4() {
+    var voc = S.snap.v4vocab || [], cats = {};
+    voc.forEach(function (t) { var c = t.cat || 'otras'; (cats[c] = cats[c] || []).push(t.tag); });
+    var sel = function (id, lab, lista, def) { return '<div class="campo"><label for="' + id + '">' + lab + '</label><select id="' + id + '">' + opts(lista, def || '', '—') + '</select></div>'; };
+    return '<div class="v4tit">Perfil operativo</div><div class="sub">Lo usan la seguridad de Carena y el generador de v4.</div><div class="campo"><label class="casilla v4on"><input type="checkbox" id="a-v4" checked onchange="App.altaV4(this.checked)"><span><b>Crear también en v4</b> · su ficha, su fila en PERFILES y en el PANEL, para que el generador le planifique</span></label></div>' +
+      '<div class="v4caja" id="a-v4c"><div class="rejilla">' + sel('a-mod', 'Modalidad', ['circuito', 'hiit_funcional'], 'circuito') + sel('a-niv', 'Nivel inicial', ['Bajo', 'Medio', 'Alto']) +
+      sel('a-rpe', 'RPE máximo permitido', ['5', '6', '7', '8', '9', '10']) + sel('a-pia', 'Presión intraabdominal máxima', ['baja', 'media', 'alta']) +
+      '<div class="campo"><label for="a-mun">Carga máxima de muñeca (kg · 99 = sin límite)</label><input type="text" inputmode="decimal" id="a-mun" value="99"></div>' + sel('a-axi', 'Carga axial máxima (opcional)', ['nula', 'media', 'alta']) +
+      sel('a-car', 'Cardio progresivo previo', ['no', 'sí'], 'no') + '<div class="campo"><label for="a-ini">Fecha de inicio</label><input type="date" id="a-ini" value="' + hoyIso() + '"></div></div>' +
+      '<div class="campo"><label>Contraindicaciones (las etiquetas de v4)</label><label class="casilla"><input type="checkbox" id="a-ninguna" onchange="App.altaNinguna(this.checked)"><span><b>Ninguna</b></span></label>' +
+      (voc.length ? Object.keys(cats).sort().map(function (c) { return '<div class="sub" style="margin-top:10px;font-weight:600">' + esc(c) + '</div><div class="contras">' + cats[c].map(function (t) {
+        return '<label class="casilla"><input type="checkbox" name="a-contra" value="' + esc(t) + '"><span>' + esc(t.replace(/_/g, ' ')) + '</span></label>'; }).join('') + '</div>'; }).join('')
+        : '<div class="nota a">No tengo la lista de contraindicaciones de v4 en este aparato: pulsa Actualizar con conexión y vuelve a abrir el alta.</div>') + '</div></div>';
+  }
+  function altaV4(on) { var c = $('a-v4c'); if (c) c.hidden = !on; }
+  function altaNinguna(on) { [].forEach.call(document.querySelectorAll('input[name=a-contra]'), function (x) { if (on) x.checked = false; x.disabled = on; }); }
   function guardarAlta() {
     if (!enLinea()) { toast('El alta necesita conexión'); return; }
     var d = { nombre: val('a-nombre'), telefono: val('a-tel'), nacimiento: val('a-nac'), sexo: val('a-sexo'), email: val('a-email'), sesionesSemana: val('a-ses'), pareja: val('a-pareja'),
               etiqueta: val('a-etq'), horario: val('a-hor'), consentimiento: val('a-cons'), objetivos: val('a-obj'), condiciones: val('a-cond').split('\n') };
     if (d.nombre.split(/\s+/).length < 2) { toast('Escribe nombre y apellido'); return; }
-    $('a-ok').disabled = true; $('a-estado').innerHTML = '<div class="nota n">' + ico('reloj') + ' Creando su código y su carpeta en Carena…</div>';
+    if ($('a-v4') && $('a-v4').checked) {
+      var contras = $('a-ninguna').checked ? ['ninguna'] : [].map.call(document.querySelectorAll('input[name=a-contra]:checked'), function (x) { return x.value; });
+      d.v4 = { modalidad: val('a-mod'), nivel: val('a-niv'), maxRpe: val('a-rpe'), pia: val('a-pia'), muneca: val('a-mun'), axial: val('a-axi'), cardio: val('a-car'), inicio: val('a-ini'), contras: contras };
+      var falta = [], fr = parseInt(d.sesionesSemana, 10);
+      if (!(fr >= 1 && fr <= 3)) falta.push('sesiones por semana (1 a 3)');
+      if (!d.v4.modalidad) falta.push('modalidad'); if (!d.v4.nivel) falta.push('nivel'); if (!d.v4.maxRpe) falta.push('RPE máximo'); if (!d.v4.pia) falta.push('presión intraabdominal');
+      var mu = num(d.v4.muneca); if (mu === null || mu < 0 || mu > 99) falta.push('carga de muñeca (99 = sin límite)');
+      if (!contras.length) falta.push('contraindicaciones (o «Ninguna»)');
+      if (falta.length) { $('a-estado').innerHTML = '<div class="nota r">Para crearlo también en v4 falta: ' + esc(falta.join(', ')) + '.</div>'; $('a-estado').scrollIntoView({ block: 'center' }); return; }
+    }
+    $('a-ok').disabled = true; $('a-estado').innerHTML = '<div class="nota n">' + ico('reloj') + (d.v4 ? ' Creando su código y su carpeta en Carena, y su ficha y su fila en el PANEL de v4…' : ' Creando su código y su carpeta en Carena…') + '</div>';
     google.script.run.withSuccessHandler(function (r) {
-      registrarLocal('alta', { cliente: r.cliente, condiciones: r.condiciones || [], documento: r.documento || null });
-      toast('Alta hecha: ' + r.id); ir('cliente', r.id);
+      registrarLocal('alta', { cliente: r.cliente, condiciones: r.condiciones || [], documento: r.documento || null, limites: r.limites || [] });
+      ir('cliente', r.id);
+      if (r.v4 && r.v4.error) modal('<h3>Alta hecha en Carena: ' + esc(r.id) + '</h3><div class="nota r">No se pudo completar en v4: ' + esc(r.v4.error) + '</div><div class="pie-modal"><button class="btn pri" onclick="App.cerrarModal()">Entendido</button></div>');
+      else toast('Alta hecha: ' + r.id + (r.v4 ? ' · también en v4 (ficha y PANEL)' : ''));
     }).withFailureHandler(function (e) { $('a-ok').disabled = false; $('a-estado').innerHTML = '<div class="nota r">' + esc(e && e.message || e) + '</div>'; }).apiAlta(d);
   }
 
@@ -1840,7 +1975,7 @@ var App = (function () {
       '<div class="caja">' + lista.slice(0, 200).map(function (e) {
         var b = []; if (e.impacto === 'alto') b.push('impacto alto'); if (e.oh) b.push('por encima de la cabeza'); if (e.flexion) b.push('flexión con carga'); if (e.pia === 'alta') b.push('PIA alta');
         var marca = est === 'borrador' ? '<label class="icono" style="flex:none" onclick="event.stopPropagation()"><input type="checkbox" style="width:22px;height:22px" ' + (S.sel[e.id] ? 'checked ' : '') + 'onchange="App.selEj(\'' + e.id + '\',this.checked)"></label>' : '';
-        return '<div class="item" style="padding:6px 10px">' + marca + '<button style="flex:1;text-align:left;padding:6px 4px" onclick="App.fichaEj(\'' + e.id + '\')"><span class="nombre" style="font-size:15px">' + esc(e.nombre) + '</span>' + (e.estado !== 'activo' ? ' <span class="chip ' + (e.estado === 'borrador' ? 'a' : '') + '">' + esc(e.estado) + (e.local ? ' · pendiente de subir' : '') + '</span>' : '') + '<br><span class="sub">' + esc([e.local ? '' : e.id, e.patron, e.tipo, e.material].filter(Boolean).join(' · ')) + (b.length ? ' · ' + esc(b.join(', ')) : '') + '</span></button><span class="sub">' + (num(e.usos) || 0) + '</span></div>';
+        return '<div class="item" style="padding:6px 10px">' + marca + '<button style="flex:1;text-align:left;padding:6px 4px" onclick="App.fichaEj(\'' + e.id + '\')"><span class="nombre" style="font-size:15px">' + esc(e.nombre) + '</span>' + (e.video ? ' <span class="chip" title="Tiene vídeo">' + ico('play') + 'vídeo</span>' : '') + (e.estado !== 'activo' ? ' <span class="chip ' + (e.estado === 'borrador' ? 'a' : '') + '">' + esc(e.estado) + (e.local ? ' · pendiente de subir' : '') + '</span>' : '') + '<br><span class="sub">' + esc([e.local ? '' : e.id, e.patron, e.tipo, e.material].filter(Boolean).join(' · ')) + (b.length ? ' · ' + esc(b.join(', ')) : '') + '</span></button><span class="sub">' + (num(e.usos) || 0) + '</span></div>';
       }).join('') + (lista.length ? '' : '<div class="vacio">Nada</div>') + '</div>';
   }
   var CAMPOS_EJ = [['Patrón', 'patron', 'patron'], ['Tipo', 'tipo', 'tipoEj'], ['Posición', 'posicion', 'posicion'], ['Impacto', 'impacto', 'impacto'], ['Muñeca', 'muneca', 'muneca'], ['Agarre', 'agarre', 'agarre'],
@@ -1851,14 +1986,14 @@ var App = (function () {
     var L = listas(), edita = e.estado === 'borrador' && !e.local;
     if (!edita) {
       var fila = function (k, v) { return v === '' || v === null || v === undefined ? '' : '<tr><td class="sub">' + k + '</td><td>' + esc(v) + '</td></tr>'; };
-      modal('<h3>' + esc(e.nombre) + '</h3><div class="sub">' + esc(e.local ? 'pendiente de subir' : e.id) + ' · ' + esc(e.estado) + (e.usos ? ' · ' + e.usos + ' usos' : '') + '</div><table class="tabla" style="margin-top:10px">' +
+      modal('<h3>' + esc(e.nombre) + '</h3><div class="sub">' + esc(e.local ? 'pendiente de subir' : e.id) + ' · ' + esc(e.estado) + (e.usos ? ' · ' + e.usos + ' usos' : '') + '</div>' + htmlVideoEj(e) + '<table class="tabla" style="margin-top:10px">' +
         fila('Patrón', e.patron) + fila('Tipo', e.tipo) + fila('Posición', e.posicion) + fila('Material', e.material) + fila('Unilateral', e.unilateral ? 'sí' : 'no') + fila('Nivel', e.nivel) +
         fila('Impacto', e.impacto) + fila('Muñeca', e.muneca) + fila('Agarre', e.agarre) + fila('Por encima de la cabeza', e.oh ? 'sí' : 'no') + fila('Flexión de columna con carga', e.flexion ? 'sí' : 'no') +
         fila('Presión intraabdominal', e.pia) + fila('Equilibrio', e.equilibrio) + fila('Alternativas', e.alternativas) + fila('Regresión', (I.E[e.regresion] || {}).nombre || e.regresion) + fila('Progresión', (I.E[e.progresion] || {}).nombre || e.progresion) +
         fila('Dosis típica', e.dosis) + fila('Consignas', e.consignas) + fila('Notas', e.notas) + '</table><div class="pie-modal">' + (e.estado === 'archivado' && !e.local ? '<button class="btn" onclick="App.guardarEj(\'' + id + '\',\'borrador\')">Volver a borrador</button>' : '') + '<button class="btn pri" onclick="App.cerrarModal()">Cerrar</button></div>');
       return;
     }
-    modal('<h3>' + esc(e.nombre) + '</h3><div class="sub">' + esc(e.id) + ' · en borrador' + (e.usos ? ' · ' + e.usos + ' usos en el histórico' : '') + '</div>' + (e.notas ? '<div class="nota a">' + esc(e.notas) + '</div>' : '') +
+    modal('<h3>' + esc(e.nombre) + '</h3><div class="sub">' + esc(e.id) + ' · en borrador' + (e.usos ? ' · ' + e.usos + ' usos en el histórico' : '') + '</div>' + htmlVideoEj(e) + (e.notas ? '<div class="nota a">' + esc(e.notas) + '</div>' : '') +
       '<div class="campo"><label>Nombre</label><input type="text" id="x-Nombre" value="' + esc(e.nombre) + '"></div>' +
       '<div class="rejilla">' + CAMPOS_EJ.map(function (c) { return '<div class="campo"><label>' + c[0] + '</label><select id="x-' + c[1] + '">' + opts(L[c[2]] || [], e[c[1]], '—') + '</select></div>'; }).join('') +
       '<div class="campo"><label>Material</label><input type="text" id="x-material" value="' + esc(e.material) + '"></div><div class="campo"><label>Nivel (1–5)</label><select id="x-nivel">' + opts(['1', '2', '3', '4', '5'], String(e.nivel || ''), '—') + '</select></div></div>' +
@@ -1879,6 +2014,37 @@ var App = (function () {
     if (estado && estado !== e.estado) campos['Estado'] = estado;
     if (Object.keys(campos).length) hacer('catalogo', { accion: 'guardar', items: [{ ID: id, campos: campos }] });
     cerrarModal(); pintar(); toast(estado === 'activo' ? 'Activado' : estado === 'archivado' ? 'Archivado' : 'Guardado');
+  }
+  function embedDe(u) {
+    u = String(u || ''); var m;
+    if ((m = /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/.exec(u))) return 'https://www.youtube-nocookie.com/embed/' + m[1] + '?rel=0&modestbranding=1&playsinline=1';
+    if ((m = /vimeo\.com\/(?:video\/)?(\d+)/.exec(u))) return 'https://player.vimeo.com/video/' + m[1];
+    return '';
+  }
+  function htmlVideoEj(e) {
+    if (e.local) return '';
+    return '<div class="acciones">' + (e.video ? '<button class="btn mini pri" onclick="App.verVideo(\'' + e.id + '\')">' + ico('play') + 'Ver vídeo</button>' : '') +
+      '<button class="btn mini" onclick="App.editarVideo(\'' + e.id + '\')">' + (e.video ? 'Cambiar vídeo' : ico('mas') + 'Añadir vídeo') + '</button></div>';
+  }
+  function verVideo(id) {
+    var e = I.E[id] || S.snap.ejercicios.filter(function (x) { return x.id === id; })[0]; if (!e || !e.video) return;
+    var em = embedDe(e.video);
+    modal('<h3>' + esc(e.nombre) + '</h3>' + (em ? '<div class="video"><iframe src="' + esc(em) + '" title="Vídeo: ' + esc(e.nombre) + '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe></div>'
+      : '<div class="nota n">Este enlace no se puede ver dentro de la app: se abre fuera.</div>') + (e.consignas ? '<div class="nota n">' + esc(e.consignas) + '</div>' : '') +
+      '<div class="pie-modal"><a class="btn" href="' + esc(e.video) + '" target="_blank" rel="noopener">Abrir fuera</a><button class="btn" onclick="App.editarVideo(\'' + e.id + '\')">Cambiar enlace</button><button class="btn pri" onclick="App.cerrarModal()">Cerrar</button></div>');
+  }
+  function editarVideo(id) {
+    var e = I.E[id] || S.snap.ejercicios.filter(function (x) { return x.id === id; })[0]; if (!e) return;
+    modal('<h3>Vídeo · ' + esc(e.nombre) + '</h3><div class="campo"><label for="x-video">Enlace (YouTube, Vimeo, Drive…)</label><input type="url" id="x-video" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…" value="' + esc(e.video || '') + '"></div>' +
+      '<div class="sub">YouTube y Vimeo se ven dentro de la app; los demás enlaces se abren fuera.</div><div class="pie-modal">' + (e.video ? '<button class="btn peligro" onclick="App.guardarVideo(\'' + e.id + '\',1)">Quitar</button>' : '') +
+      '<button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" onclick="App.guardarVideo(\'' + e.id + '\')">Guardar</button></div>');
+    setTimeout(function () { try { $('x-video').focus(); } catch (x) {} }, 80);
+  }
+  function guardarVideo(id, quitar) {
+    var v = quitar ? '' : val('x-video').trim();
+    if (v && !/^https:\/\/[^\s<>"']+$/.test(v)) { toast('Tiene que ser un enlace que empiece por https://'); return; }
+    hacer('catalogo', { accion: 'guardar', items: [{ ID: id, campos: { 'Vídeo': v } }] });
+    cerrarModal(); pintar(); toast(v ? 'Vídeo guardado' : 'Vídeo quitado');
   }
   function selEj(id, on) { S.sel[id] = on; pintarCatalogo(); }
   function catBloque(estado) {
@@ -2075,7 +2241,8 @@ var App = (function () {
   }
   document.addEventListener('DOMContentLoaded', arrancar);
 
-  return { ir: ir, dia: cambiarDia, diaEn: diaEn, crono: crono, cronoIr: cronoIr, cronoCero: cronoCero, cronoModo: cronoModo, cronoMas: cronoMas, cronoPre: cronoPre, cronoMin: cronoMin, empezar: empezarOSeguir, sinCita: sinCita, sinCitaOk: sinCitaOk, marcar: marcar, quitar: quitar, todo: todoComoEstaba,
+  return { ir: ir, dia: cambiarDia, diaEn: diaEn, noSeHizo: noSeHizo, nshMotivo: nshMotivo, guardarNoSeHizo: guardarNoSeHizo, deshacerVisita: deshacerVisita,
+    verVideo: verVideo, editarVideo: editarVideo, guardarVideo: guardarVideo, altaV4: altaV4, altaNinguna: altaNinguna, crono: crono, cronoIr: cronoIr, cronoCero: cronoCero, cronoModo: cronoModo, cronoMas: cronoMas, cronoPre: cronoPre, cronoMin: cronoMin, empezar: empezarOSeguir, sinCita: sinCita, sinCitaOk: sinCitaOk, marcar: marcar, quitar: quitar, todo: todoComoEstaba,
            igual: function () { S.reg.igual = !S.reg.igual; guardarReg(); pintarSesion(); }, cerrar: cerrar, pendientesReg: pendientesReg, cambiar: abrirCambio,
            setEdit: setEdit, setCarga: setCarga, setCargaTexto: setCargaTexto, guardarCambio: guardarCambio, buscarEj: buscarEj, filtrarEj: filtrarEj,
            elegirEj: elegirEj, setBloque: setBloque, volverCambio: volverCambio, anadir: function (cid) { buscarEj('anadir', cid); }, repetir: repetir,

@@ -1,5 +1,5 @@
 /* Carena · arranque sin conexión. Guarda la carcasa de la app (nunca datos de clientes ni llamadas a Carena). */
-const CACHE = 'carena-0.4.0-ab1382759a';
+const CACHE = 'carena-0.5.0-be2b3e45e6';
 const CARCASA = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'fonts/inter-latin-400-normal.woff2', 'fonts/inter-latin-500-normal.woff2', 'fonts/inter-latin-600-normal.woff2', 'fonts/inter-latin-700-normal.woff2', 'fonts/cormorant-garamond-latin-500-normal.woff2', 'fonts/cormorant-garamond-latin-600-normal.woff2'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CARCASA.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {

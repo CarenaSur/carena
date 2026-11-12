@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tu alta · Entrenamiento a domicilio</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2A2826">
+<link rel="icon" type="image/png" href="../icons/icon-192.png">
+<style>
+@font-face{font-family:"Inter";font-weight:400;font-display:swap;src:url(../fonts/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;font-display:swap;src:url(../fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;font-display:swap;src:url(../fonts/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Cormorant Garamond";font-weight:600;font-display:swap;src:url(../fonts/cormorant-garamond-latin-600-normal.woff2) format("woff2")}
+:root{--grafito:#2A2826;--cal:#F7F5F0;--albero:#8A6A33;--albero-cl:#CDA866;--piedra:#CFC6B6;--piedra-cl:#E6E0D4;--sec:#6F675C;--rojo:#a4231c;--rojo-bg:#fbe4e1;--verde:#2f6b3a;--verde-bg:#e3f0e3;--ambar:#8a5a00;--ambar-bg:#fdf1d8;--blanco:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cal);color:var(--grafito);font:16px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-size-adjust:100%}
+header{background:var(--grafito);color:var(--cal);padding:calc(14px + env(safe-area-inset-top)) 16px 14px}
+.marca{display:flex;align-items:center;gap:10px;max-width:720px;margin:0 auto}
+.marca svg{flex:none}
+.marca b{font:600 22px/1.1 "Cormorant Garamond",Georgia,serif;letter-spacing:.02em}
+.marca span{display:block;color:var(--piedra);font-size:13px}
+.pasos{display:flex;gap:6px;max-width:720px;margin:12px auto 0;padding:0}
+.pasos li{list-style:none;flex:1;height:5px;border-radius:3px;background:#4a4642}
+.pasos li.hecho{background:var(--albero-cl)}.pasos li.aqui{background:var(--cal)}
+main{max-width:720px;margin:0 auto;padding:18px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:600 30px/1.15 "Cormorant Garamond",Georgia,serif;margin:4px 0 6px}
+h2{font-size:18px;margin:22px 0 8px}
+.sub{color:var(--sec);margin:0 0 16px}
+.card{background:var(--blanco);border:1px solid var(--piedra-cl);border-radius:14px;padding:16px;margin:12px 0}
+label.campo{display:block;margin:12px 0}
+label.campo>span{display:block;font-size:14px;font-weight:500;margin-bottom:5px}
+input[type=text],input[type=tel],input[type=email],input[type=date],input[type=number],select,textarea{width:100%;min-height:48px;border:1px solid var(--piedra);border-radius:10px;padding:10px 12px;font:inherit;background:var(--blanco);color:inherit}
+textarea{min-height:84px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--albero-cl);outline-offset:1px}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:520px){.dos{grid-template-columns:1fr}}
+.opc{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--piedra-cl);border-radius:10px;margin:6px 0;background:var(--blanco);cursor:pointer}
+.opc input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--albero)}
+.opc.on{border-color:var(--albero-cl);background:#fbf7ee}
+.fila-opc{display:flex;flex-wrap:wrap;gap:8px}.fila-opc .opc{flex:1 1 140px;margin:0}
+.escala{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+.escala button{min-height:44px;border:1px solid var(--piedra);border-radius:8px;background:var(--blanco);font:600 15px Inter,sans-serif;color:inherit}
+.escala button.on{background:var(--grafito);color:var(--cal);border-color:var(--grafito)}
+.extremos{display:flex;justify-content:space-between;font-size:12px;color:var(--sec);margin-top:4px}
+.doc{max-height:58vh;overflow:auto;border:1px solid var(--piedra-cl);border-radius:12px;padding:6px 16px;background:var(--blanco);font-size:15px}
+.doc h1{font-size:24px}.doc table{border-collapse:collapse;width:100%;font-size:14px}.doc th,.doc td{border:1px solid var(--piedra-cl);padding:6px;text-align:left;vertical-align:top}
+.doc th{width:34%;background:#f6f3ec}
+.doc .casilla{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--albero-cl);border-radius:10px;margin:10px 0;background:#fbf7ee}
+.doc .casilla input{width:24px;height:24px;flex:none;margin:0;accent-color:var(--albero)}
+.doc .hueco-firma{color:var(--sec);font-style:italic}.doc .falta{color:var(--rojo)}
+.obl{color:var(--rojo);font-size:13px;font-weight:600;white-space:nowrap}
+.firma-caja{position:relative;border:2px dashed var(--piedra);border-radius:12px;background:var(--blanco);touch-action:none}
+.firma-caja canvas{display:block;width:100%;height:180px;border-radius:12px}
+.firma-caja .guia{position:absolute;left:16px;right:16px;bottom:40px;border-top:1px solid var(--piedra-cl);pointer-events:none}
+.firma-caja .vacia{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sec);pointer-events:none}
+.botones{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.btn{min-height:50px;border-radius:12px;border:1px solid var(--grafito);background:transparent;color:var(--grafito);font:600 16px Inter,sans-serif;padding:0 18px;cursor:pointer}
+.btn.pri{background:var(--grafito);color:var(--cal);flex:1}
+.btn.mini{min-height:38px;font-size:14px;padding:0 12px}
+.btn[disabled]{opacity:.5}
+.nota{border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
+.nota.r{background:var(--rojo-bg);color:var(--rojo)}.nota.v{background:var(--verde-bg);color:var(--verde)}.nota.a{background:var(--ambar-bg);color:var(--ambar)}
+.resumen dt{font-weight:600;font-size:14px;margin-top:10px}.resumen dd{margin:2px 0 0}
+.q{padding:12px 0;border-bottom:1px solid var(--piedra-cl)}.q:last-child{border:0}
+.q p{margin:0 0 8px;font-weight:500}
+.centro{text-align:center;padding:40px 0}
+.giro{width:34px;height:34px;border:3px solid var(--piedra-cl);border-top-color:var(--albero);border-radius:50%;margin:0 auto 12px;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.giro{animation:none}}
+.oculto,.firma-caja .vacia.oculto{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="marca">
+    <svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><line x1="6" y1="80" x2="114" y2="80" stroke="#F7F5F0" stroke-width="8"/><path d="M6 106 C 50 106 60 36 114 22" fill="none" stroke="#CDA866" stroke-width="8" stroke-linecap="round"/></svg>
+    <div><b id="quien">Entrenamiento a domicilio</b><span id="lema">Tu alta</span></div>
+  </div>
+  <ol class="pasos" id="pasos" aria-hidden="true"></ol>
+</header>
+<main id="main" aria-live="polite"><div class="centro"><div class="giro"></div>Cargando…</div></main>
+<script>
+(function () {
+  'use strict';
+  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec';
+  var h = String(location.hash || '').slice(1), EN_PERSONA = h.charAt(0) === 'p', LLAVE = EN_PERSONA ? h.slice(1) : h;
+  var V = null, B = null, PASO = 0, OCUPADO = false;
+  var NOMBRES = { datos: 'Tus datos', documentos: 'Documentos', salud: 'Salud', entrenamiento: 'Entrenamiento', cuestionarios: 'Cuestionarios', enviar: 'Revisar y enviar' };
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function llamar(accion, extra) {
+    var cuerpo = { fn: 'invitacion', llave: LLAVE, accion: accion };
+    Object.keys(extra || {}).forEach(function (k) { cuerpo[k] = extra[k]; });
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo), redirect: 'follow', cache: 'no-store', credentials: 'omit' })
+      .then(function (r) { if (!r.ok) throw new Error('No hay conexión con el servidor (' + r.status + '). Vuelve a intentarlo.'); return r.json(); },
+            function () { throw new Error('Sin conexión. Comprueba tu internet y vuelve a intentarlo.'); })
+      .then(function (r) { if (!r || r.error) { var e = new Error(r ? r.error : 'Respuesta vacía'); e.codigo = r && r.codigo; throw e; } return r.ok; });
+  }
+  function pantalla(html) { $('main').innerHTML = html; window.scrollTo(0, 0); }
+  function fallo(msg, fatal) {
+    if (fatal) { pantalla('<h1>No se puede abrir</h1><div class="nota r">' + esc(msg) + '</div>'); $('pasos').innerHTML = ''; return; }
+    var n = $('aviso'); if (n) { n.innerHTML = '<div class="nota r" role="alert">' + esc(msg) + '</div>'; n.scrollIntoView({ block: 'center' }); }
+  }
+  function marcarPasos() {
+    $('pasos').innerHTML = V.pasos.map(function (p, i) { return '<li class="' + (i < PASO ? 'hecho' : i === PASO ? 'aqui' : '') + '"></li>'; }).join('');
+  }
+  function val(id) { var e = $(id); return e ? String(e.value || '').trim() : ''; }
+  function marcados(name) { return [].map.call(document.querySelectorAll('input[name="' + name + '"]:checked'), function (x) { return x.value; }); }
+  function uno(name) { var x = document.querySelector('input[name="' + name + '"]:checked'); return x ? x.value : ''; }
+  function opc(tipo, name, value, texto, on) {
+    return '<label class="opc' + (on ? ' on' : '') + '"><input type="' + tipo + '" name="' + esc(name) + '" value="' + esc(value) + '"' + (on ? ' checked' : '') + '><span>' + texto + '</span></label>';
+  }
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t || (t.type !== 'checkbox' && t.type !== 'radio')) return;
+    if (t.type === 'radio') [].forEach.call(document.querySelectorAll('input[name="' + t.name + '"]'), function (x) { x.closest('.opc') && x.closest('.opc').classList.toggle('on', x.checked); });
+    else if (t.closest('.opc')) t.closest('.opc').classList.toggle('on', t.checked);
+    if (t.dataset.q) { pintarCuestionariosVisibles(); }
+  });
+  function pie(sig, txtSig) {
+    return '<div id="aviso"></div><div class="botones">' + (PASO > 0 ? '<button class="btn" id="atras">Atrás</button>' : '') +
+      '<button class="btn pri" id="sig">' + esc(txtSig || 'Guardar y seguir') + '</button></div>';
+  }
+  function enlazarPie(sig) {
+    if ($('atras')) $('atras').onclick = function () { PASO--; pintar(); };
+    $('sig').onclick = function () {
+      if (OCUPADO) return;
+      var b = $('sig'), t = b.textContent; OCUPADO = true; b.disabled = true; b.textContent = 'Guardando…'; $('aviso').innerHTML = '';
+      Promise.resolve().then(sig).then(function (seguir) { OCUPADO = false; if (seguir !== false) { PASO++; pintar(); } else { b.disabled = false; b.textContent = t; } })
+        .catch(function (e) { OCUPADO = false; b.disabled = false; b.textContent = t; fallo(e.message, e.codigo === 410 || e.codigo === 401); });
+    };
+  }
+
+  // ---------- Pasos ----------
+  function pintar() {
+    marcarPasos();
+    var p = V.pasos[PASO];
+    ({ datos: pDatos, documentos: pDocumentos, salud: pSalud, entrenamiento: pEntrenamiento, cuestionarios: pCuestionarios, enviar: pEnviar })[p]();
+  }
+  function cabecera(titulo, sub) { return '<h1>' + esc(titulo) + '</h1>' + (sub ? '<p class="sub">' + sub + '</p>' : ''); }
+
+  function pDatos() {
+    var d = B.datos || {}, em = d.emergencia || {}, alta = V.tipo === 'alta';
+    var intro = PASO === 0 ? (alta ? 'Hola' + (d.nombre ? ', ' + esc(d.nombre.split(' ')[0]) : '') + '. ' + esc(V.entrenador || 'Tu entrenador') + ' te ha enviado tu alta. Son seis pasos, unos 15 minutos. Se guarda al pasar de paso: puedes cerrar y seguir con este mismo enlace hasta el ' + esc(fecha(V.caduca)) + '.'
+      : 'Hola, ' + esc((d.nombre || '').split(' ')[0]) + '. Son los documentos nuevos del servicio para leer y firmar. Tardarás unos 5 minutos.') : '';
+    pantalla(cabecera(NOMBRES.datos, intro) +
+      '<div class="card">' + (alta ? '<label class="campo"><span>Nombre y apellidos</span><input type="text" id="d-nombre" autocomplete="name" value="' + esc(d.nombre) + '"></label>' +
+        '<div class="dos"><label class="campo"><span>Fecha de nacimiento</span><input type="date" id="d-nac" value="' + esc(d.nacimiento) + '"></label>' +
+        '<label class="campo"><span>Sexo</span><select id="d-sexo"><option value="">—</option><option' + (d.sexo === 'mujer' ? ' selected' : '') + '>mujer</option><option' + (d.sexo === 'hombre' ? ' selected' : '') + '>hombre</option></select></label></div>'
+        : '<p><b>' + esc(d.nombre) + '</b></p>') +
+      '<div class="dos"><label class="campo"><span>Teléfono</span><input type="tel" id="d-tel" autocomplete="tel" value="' + esc(d.telefono) + '"></label>' +
+      '<label class="campo"><span>Correo (te llega aquí la copia firmada)</span><input type="email" id="d-email" autocomplete="email" value="' + esc(d.email) + '"></label></div>' +
+      '<label class="campo"><span>Dirección de las sesiones' + (alta ? '' : ' (si ha cambiado)') + '</span><input type="text" id="d-dir" autocomplete="street-address" value="' + esc(d.direccion) + '"></label></div>' +
+      '<h2>Contacto de emergencia</h2><p class="sub">A quién llamar si te pasa algo durante una sesión. Es obligatorio.</p><div class="card">' +
+      '<div class="dos"><label class="campo"><span>Nombre</span><input type="text" id="e-nombre" value="' + esc(em.nombre) + '"></label>' +
+      '<label class="campo"><span>Relación (hija, pareja…)</span><input type="text" id="e-rel" value="' + esc(em.relacion) + '"></label></div>' +
+      '<label class="campo"><span>Teléfono</span><input type="tel" id="e-tel" value="' + esc(em.telefono) + '"></label></div>' + pie());
+    enlazarPie(function () {
+      var x = { nombre: alta ? val('d-nombre') : d.nombre, nacimiento: alta ? val('d-nac') : '', sexo: alta ? val('d-sexo') : '', telefono: val('d-tel'), email: val('d-email'),
+                direccion: val('d-dir'), emergencia: { nombre: val('e-nombre'), relacion: val('e-rel'), telefono: val('e-tel') } };
+      return llamar('guardar', { paso: 'datos', datos: x }).then(function (r) {
+        B.datos = x; B.pasos.datos = true; if (r.firmaBorrada) { B.firma = null; delete B.pasos.documentos; }
+        return llamar('abrir').then(function (v) { V.documentos = v.documentos; });          // los documentos llevan tu nombre y tu contacto
+      });
+    });
+  }
+
+  var FIRMA = { trazos: 0 };
+  function pDocumentos() {
+    var f = B.firma;
+    pantalla(cabecera(NOMBRES.documentos, 'Léelos con calma. Las casillas marcadas como obligatorias hacen falta para el servicio; las demás son tuyas: marca solo las que quieras. Al final firmas una vez con el dedo.') +
+      V.documentos.map(function (d, i) {
+        return '<h2 class="sub" style="font-size:14px;font-weight:500">Documento ' + (i + 1) + ' de ' + V.documentos.length + '</h2><div class="doc" data-doc="' + esc(d.id) + '">' + d.html + '</div>';
+      }).join('') +
+      '<h2>Firma</h2><div class="card">' + (f ? '<div class="nota v">Ya firmaste el ' + esc(fechaHora(f.fecha)) + '. Si cambias alguna casilla, vuelve a firmar.</div>' : '') +
+      '<label class="campo"><span>Escribe tu nombre completo</span><input type="text" id="f-nombre" value="' + esc(f ? f.nombreEscrito : '') + '" autocomplete="name"></label>' +
+      '<div class="campo"><span style="display:block;font-size:14px;font-weight:500;margin-bottom:5px">Firma aquí con el dedo</span><div class="firma-caja"><canvas id="lienzo" aria-label="Zona para firmar"></canvas><div class="guia"></div><div class="vacia" id="vacia">Firma aquí</div></div>' +
+      '<div class="botones"><button class="btn mini" id="borrar">Borrar la firma</button></div></div>' +
+      '<p class="sub" style="margin-top:12px">Al firmar aceptas los documentos de arriba con las casillas que has marcado. Se guarda la fecha y la hora, y recibirás una copia en PDF.</p></div>' +
+      pie(null, 'Firmar y seguir'));
+    // Casillas interactivas dentro de cada documento
+    V.documentos.forEach(function (d) {
+      var caja = document.querySelector('.doc[data-doc="' + d.id + '"]');
+      [].forEach.call(caja.querySelectorAll('.casilla'), function (c) {
+        var cod = c.getAttribute('data-c'), def = (d.casillas.filter(function (x) { return x.codigo === cod; })[0]) || {};
+        var on = f && f.casillas && f.casillas[d.id] && f.casillas[d.id][cod] === true;
+        var span = c.querySelector('.caja'); if (span) span.remove();
+        var inp = document.createElement('input'); inp.type = 'checkbox'; inp.checked = !!on; inp.setAttribute('data-plantilla', d.id); inp.setAttribute('data-casilla', cod);
+        var lab = document.createElement('label'); lab.className = 'casilla'; lab.innerHTML = '<span>' + c.innerHTML + (def.obligatoria ? ' <span class="obl">Obligatoria</span>' : '') + '</span>';
+        lab.insertBefore(inp, lab.firstChild); c.replaceWith(lab);
+      });
+    });
+    lienzo();
+    enlazarPie(function () {
+      var casillas = {}, faltan = [];
+      V.documentos.forEach(function (d) {
+        casillas[d.id] = {};
+        d.casillas.forEach(function (c) {
+          var x = document.querySelector('input[data-plantilla="' + d.id + '"][data-casilla="' + c.codigo + '"]'), on = !!(x && x.checked);
+          casillas[d.id][c.codigo] = on; if (c.obligatoria && !on) faltan.push(d.nombre);
+        });
+      });
+      if (faltan.length) throw new Error('Falta marcar la casilla obligatoria en: ' + faltan.join(', ') + '.');
+      if (!val('f-nombre')) throw new Error('Escribe tu nombre completo.');
+      if (FIRMA.trazos < 1 || FIRMA.largo < 60) throw new Error('Firma con el dedo en el recuadro.');
+      return llamar('firmar', { datos: { nombreEscrito: val('f-nombre'), casillas: casillas, imagen: FIRMA.png(), enPersona: EN_PERSONA } })
+        .then(function (r) { B.firma = { fecha: r.fecha, nombreEscrito: val('f-nombre'), casillas: casillas }; B.pasos.documentos = true; });
+    });
+  }
+  function lienzo() {
+    var c = $('lienzo'), ctx = c.getContext('2d'), dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2)), dib = false, ult = null;
+    function tam() { var r = c.getBoundingClientRect(); c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); limpiar(); }
+    function limpiar() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.strokeStyle = '#1b1a19'; ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; FIRMA.trazos = 0; FIRMA.largo = 0; $('vacia').classList.remove('oculto'); }
+    function pos(e) { var r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    c.addEventListener('pointerdown', function (e) { e.preventDefault(); c.setPointerCapture(e.pointerId); dib = true; ult = pos(e); FIRMA.trazos++; $('vacia').classList.add('oculto'); });
+    c.addEventListener('pointermove', function (e) { if (!dib) return; var p = pos(e); ctx.beginPath(); ctx.moveTo(ult.x, ult.y); ctx.lineTo(p.x, p.y); ctx.stroke(); FIRMA.largo += Math.hypot(p.x - ult.x, p.y - ult.y); ult = p; });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { c.addEventListener(t, function () { dib = false; }); });
+    $('borrar').onclick = limpiar;
+    FIRMA.png = function () {                                   // a 600 px de ancho como mucho: pesa poco y se ve bien en el PDF
+      var w = Math.min(600, c.width), hh = Math.round(c.height * w / c.width), o = document.createElement('canvas'); o.width = w; o.height = hh;
+      var x = o.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, hh); x.drawImage(c, 0, 0, w, hh); return o.toDataURL('image/png');
+    };
+    tam(); window.addEventListener('resize', function () { if (!FIRMA.trazos) tam(); });
+  }
+
+  function pSalud() {
+    var s = B.salud || {}, con = s.condiciones || [];
+    pantalla(cabecera(NOMBRES.salud, 'Sirve para adaptar el ejercicio y hacerlo con seguridad. Lo que marques lo revisa tu entrenador contigo; si dudas, márcalo.') +
+      '<div class="card"><div class="dos"><label class="campo"><span>Peso (kg)</span><input type="number" inputmode="decimal" id="s-peso" value="' + esc(s.peso) + '"></label>' +
+      '<label class="campo"><span>Altura (cm)</span><input type="number" inputmode="numeric" id="s-alt" value="' + esc(s.altura) + '"></label></div></div>' +
+      '<h2>¿Tienes o has tenido algo de esto?</h2>' + V.condiciones.map(function (g) {
+        return '<div class="card"><b>' + esc(g.grupo) + '</b>' + g.items.map(function (i) { return opc('checkbox', 'cond', i.codigo, esc(i.texto), con.indexOf(i.codigo) >= 0); }).join('') + '</div>';
+      }).join('') +
+      '<div class="card"><label class="campo"><span>Otras enfermedades, lesiones o dolores</span><textarea id="s-otras">' + esc(s.otras) + '</textarea></label>' +
+      '<label class="campo"><span>Operaciones (cuál y cuándo)</span><textarea id="s-oper">' + esc(s.operaciones) + '</textarea></label>' +
+      '<label class="campo"><span>Medicación que tomas</span><textarea id="s-med">' + esc(s.medicacion) + '</textarea></label>' +
+      '<label class="campo"><span>Profesionales que te tratan (médico, fisioterapeuta…)</span><input type="text" id="s-prof" value="' + esc(s.profesionales) + '"></label></div>' +
+      '<h2>¿Puedes tumbarte en el suelo y volver a levantarte?</h2><div class="fila-opc">' +
+      ['sí', 'con ayuda', 'no'].map(function (x) { return opc('radio', 'suelo', x, x.charAt(0).toUpperCase() + x.slice(1), s.suelo === x); }).join('') + '</div>' + pie());
+    enlazarPie(function () {
+      var x = { peso: val('s-peso'), altura: val('s-alt'), condiciones: marcados('cond'), otras: val('s-otras'), operaciones: val('s-oper'), medicacion: val('s-med'), profesionales: val('s-prof'), suelo: uno('suelo') };
+      if (!x.suelo) throw new Error('Contesta si puedes tumbarte en el suelo y levantarte.');
+      return llamar('guardar', { paso: 'salud', datos: x }).then(function (r) { B.salud = x; B.pasos.salud = true; MIOS = r.cuestionarios || null; });
+    });
+  }
+
+  function pEntrenamiento() {
+    var e = B.entrenamiento || {}, ob = e.objetivos || [];
+    var OB = [['salud', 'Ganar salud'], ['fuerza', 'Ganar fuerza'], ['perder peso', 'Perder peso'], ['movilidad', 'Moverme mejor'], ['dolor', 'Tener menos dolor'], ['equilibrio', 'Mejorar el equilibrio'], ['rendimiento', 'Rendir en mi deporte'], ['otro', 'Otro']];
+    pantalla(cabecera(NOMBRES.entrenamiento, 'Para preparar tus sesiones.') +
+      '<h2>¿Qué quieres conseguir?</h2><div class="fila-opc">' + OB.map(function (o) { return opc('checkbox', 'obj', o[0], o[1], ob.indexOf(o[0]) >= 0); }).join('') + '</div>' +
+      '<div class="card"><label class="campo"><span>Cuéntalo con tus palabras (opcional)</span><textarea id="t-obj">' + esc(e.objetivosTexto) + '</textarea></label>' +
+      '<label class="campo"><span>¿Has entrenado antes? ¿Qué y cuánto tiempo?</span><textarea id="t-exp">' + esc(e.experiencia) + '</textarea></label>' +
+      '<label class="campo"><span>Actividad que haces fuera de las sesiones (andar, piscina…)</span><input type="text" id="t-act" value="' + esc(e.actividad) + '"></label>' +
+      '<label class="campo"><span>Días y horas que te vienen bien</span><input type="text" id="t-disp" value="' + esc(e.disponibilidad) + '"></label>' +
+      '<label class="campo"><span>Material que tienes en casa (bicicleta estática, mancuernas, escaleras…)</span><input type="text" id="t-mat" value="' + esc(e.material) + '"></label></div>' +
+      '<h2>Espacio para entrenar en casa</h2><div class="fila-opc">' + [['pequeño', 'Pequeño (2 × 2 m)'], ['medio', 'Medio'], ['grande', 'Grande o exterior']].map(function (o) { return opc('radio', 'esp', o[0], o[1], e.espacio === o[0]); }).join('') + '</div>' + pie());
+    enlazarPie(function () {
+      var x = { objetivos: marcados('obj'), objetivosTexto: val('t-obj'), experiencia: val('t-exp'), actividad: val('t-act'), disponibilidad: val('t-disp'), material: val('t-mat'), espacio: uno('esp') };
+      return llamar('guardar', { paso: 'entrenamiento', datos: x }).then(function () { B.entrenamiento = x; B.pasos.entrenamiento = true; });
+    });
+  }
+
+  // ---------- Cuestionarios (la misma lógica que el servidor: a quién y qué preguntas se ven) ----------
+  function edad(iso) { if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return null; var p = iso.split('-').map(Number), d = new Date(); return d.getFullYear() - p[0] - ((d.getMonth() + 1 < p[1] || (d.getMonth() + 1 === p[1] && d.getDate() < p[2])) ? 1 : 0); }
+  function leToca(r) {
+    if (!r) return false; if (r.siempre) return true;
+    if (r.o) return r.o.some(leToca); if (r.y) return r.y.every(leToca);
+    var con = (B.salud && B.salud.condiciones) || [];
+    if (r.edadMin) { var e = edad((B.datos || {}).nacimiento); return e !== null && e >= r.edadMin; }
+    if (r.declarado) return con.indexOf(r.declarado) >= 0;
+    if (r.condicion) return false;                            // las etiquetas las decide el servidor; aquí no se adivinan
+    return false;
+  }
+  function misCuestionarios() { return V.cuestionarios.filter(function (c) { return MIOS ? MIOS.indexOf(c.id) >= 0 : leToca(c.regla); }); }
+  var MIOS = null;
+  function respuestas() {
+    var out = {};
+    misCuestionarios().forEach(function (c) {
+      var r = {};
+      c.preguntas.forEach(function (q) {
+        var n = c.id + '|' + q.codigo;
+        if (q.tipo === 'texto') { var t = document.querySelector('textarea[data-n="' + n + '"]'); if (t && t.value.trim()) r[q.codigo] = t.value.trim(); }
+        else if (q.tipo === 'escala 0–10') { var b = document.querySelector('.escala[data-n="' + n + '"] button.on'); if (b) r[q.codigo] = Number(b.value); }
+        else { var x = document.querySelector('input[name="' + n + '"]:checked'); if (x) r[q.codigo] = q.tipo === 'sí o no' ? x.value : Number(x.value); }
+      });
+      out[c.id] = r;
+    });
+    return out;
+  }
+  function mostrar(q, c, resp) {
+    var m = /^(.+?)\s*=\s*(.+)$/.exec(q.mostrarSi || ''); if (!m) return true;
+    var quien = m[1].trim(), v = m[2].trim();
+    if (v === 'sí') { var sec = c.preguntas.filter(function (p) { return p.seccion === quien; }); if (sec.length) return sec.some(function (p) { return resp[p.codigo] === 'sí'; }); return resp[quien] === 'sí'; }
+    return String(resp[quien]) === v;
+  }
+  function pintarCuestionariosVisibles() {
+    var R = respuestas();
+    misCuestionarios().forEach(function (c) { c.preguntas.forEach(function (q) { var el = document.querySelector('.q[data-n="' + c.id + '|' + q.codigo + '"]'); if (el) el.classList.toggle('oculto', !mostrar(q, c, R[c.id] || {})); }); });
+  }
+  function pCuestionarios() {
+    var lista = misCuestionarios(), guard = B.cuestionarios || {};
+    if (!lista.length) {
+      pantalla(cabecera(NOMBRES.cuestionarios, 'No tienes cuestionarios que rellenar.') + pie());
+      enlazarPie(function () { return llamar('guardar', { paso: 'cuestionarios', datos: {} }).then(function () { B.pasos.cuestionarios = true; }); });
+      return;
+    }
+    pantalla(cabecera(NOMBRES.cuestionarios, 'Son cuestionarios validados: contesta lo que más se acerque a ti, sin pensarlo mucho.') +
+      lista.map(function (c) {
+        var r = (guard[c.id] || {}).respuestas || {};
+        return '<h2>' + esc(c.nombre) + '</h2><div class="card">' + c.preguntas.map(function (q) {
+          var n = c.id + '|' + q.codigo, ya = r[q.codigo], cuerpo;
+          if (q.tipo === 'texto') cuerpo = '<textarea data-n="' + esc(n) + '">' + esc(ya || '') + '</textarea>';
+          else if (q.tipo === 'escala 0–10') cuerpo = '<div class="escala" data-n="' + esc(n) + '">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (k) { return '<button type="button" value="' + k + '" class="' + (ya === k ? 'on' : '') + '">' + k + '</button>'; }).join('') + '</div>' +
+            (q.opciones.length >= 2 ? '<div class="extremos"><span>' + esc(q.opciones[0]) + '</span><span>' + esc(q.opciones[q.opciones.length - 1]) + '</span></div>' : '');
+          else if (q.tipo === 'sí o no') cuerpo = '<div class="fila-opc">' + ['sí', 'no'].map(function (x) { return opc('radio', n, x, x === 'sí' ? (q.opciones[0] || 'Sí') : (q.opciones[1] || 'No'), ya === x).replace('<input', '<input data-q="1"'); }).join('') + '</div>';
+          else cuerpo = q.opciones.map(function (o, k) { return opc('radio', n, q.valores[k], esc(o), ya === q.valores[k]).replace('<input', '<input data-q="1"'); }).join('');
+          return '<div class="q" data-n="' + esc(n) + '"><p>' + esc(q.texto) + (q.obligatoria ? '' : ' <span class="sub">(opcional)</span>') + '</p>' + cuerpo + '</div>';
+        }).join('') + '</div>';
+      }).join('') + pie());
+    [].forEach.call(document.querySelectorAll('.escala button'), function (b) { b.onclick = function () { [].forEach.call(b.parentNode.children, function (x) { x.classList.toggle('on', x === b); }); pintarCuestionariosVisibles(); }; });
+    pintarCuestionariosVisibles();
+    enlazarPie(function () {
+      var R = respuestas();
+      return llamar('guardar', { paso: 'cuestionarios', datos: R }).then(function (r) {
+        B.cuestionarios = B.cuestionarios || {};
+        Object.keys(R).forEach(function (k) { B.cuestionarios[k] = { respuestas: R[k] }; });
+        if (!r.completo) {
+          var falta = Object.keys(r.estado).filter(function (k) { return !r.estado[k].completo; });
+          fallo('Quedan preguntas sin contestar en: ' + falta.map(function (k) { return (V.cuestionarios.filter(function (c) { return c.id === k; })[0] || {}).nombre || k; }).join(', ') + '.');
+          return false;
+        }
+        B.pasos.cuestionarios = true;
+      });
+    });
+  }
+
+  function pEnviar() {
+    var d = B.datos || {}, em = d.emergencia || {}, s = B.salud || {};
+    var fila = function (k, v) { return '<dt>' + esc(k) + '</dt><dd>' + esc(v || '—') + '</dd>'; };
+    var nom = {}; (V.condiciones || []).forEach(function (g) { g.items.forEach(function (i) { nom[i.codigo] = i.texto; }); });
+    pantalla(cabecera(NOMBRES.enviar, 'Comprueba que todo está bien. Si algo no lo está, vuelve atrás y cámbialo.') +
+      '<div class="card"><dl class="resumen">' + fila('Nombre', d.nombre) + fila('Teléfono y correo', [d.telefono, d.email].filter(Boolean).join(' · ')) +
+      fila('Contacto de emergencia', [em.nombre, em.relacion, em.telefono].filter(Boolean).join(' · ')) + fila('Documentos', B.firma ? 'Firmados el ' + fechaHora(B.firma.fecha) : 'Sin firmar') +
+      (V.tipo === 'alta' ? fila('Salud', (s.condiciones || []).map(function (c) { return nom[c] || c; }).concat(s.otras ? [s.otras] : []).join('; ') || 'Nada marcado') + fila('Suelo', s.suelo) : '') +
+      '</dl></div>' + (d.email ? '' : '<div class="nota a">No has puesto correo: no podremos mandarte la copia firmada. Puedes volver al primer paso y añadirlo.</div>') + pie(null, 'Enviar'));
+    enlazarPie(function () {
+      $('sig').textContent = 'Enviando… (puede tardar un minuto)';
+      return llamar('enviar').then(function (r) {
+        $('pasos').innerHTML = V.pasos.map(function () { return '<li class="hecho"></li>'; }).join('');
+        pantalla('<div class="centro"><svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3f0e3"/><path d="M19 33l9 9 17-19" fill="none" stroke="#2f6b3a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '<h1>¡Listo!</h1><p>' + (V.tipo === 'alta' ? 'Tu alta ha llegado. ' + esc(V.entrenador || 'Tu entrenador') + ' la revisará contigo antes de empezar.' : 'Tus documentos están firmados.') + '</p>' +
+          (r.correo ? '<p>Te hemos mandado la copia firmada a tu correo.</p>' : '<p>Pide la copia firmada a ' + esc(V.entrenador || 'tu entrenador') + '.</p>') +
+          '<p class="sub">Para retirar un consentimiento o cualquier duda: ' + esc(V.correo) + '</p></div>');
+        return false;
+      });
+    });
+  }
+
+  function fecha(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  function fechaHora(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] + ' a las ' + m[4] : fecha(iso); }
+
+  // ---------- Arranque ----------
+  window.addEventListener('hashchange', function () { location.reload(); });   // otro enlace en la misma pestaña
+  if (!/^[0-9a-f]{64}$/.test(LLAVE)) { fallo('Este enlace no está completo. Ábrelo tal como te llegó o pide otro a tu entrenador.', true); return; }
+  llamar('abrir').then(function (v) {
+    V = v; B = v.borrador; B.pasos = B.pasos || {};
+    if (v.entrenador) { $('quien').textContent = v.entrenador; $('lema').textContent = v.tipo === 'alta' ? 'Tu alta de entrenamiento a domicilio' : 'Documentos para firmar'; }
+    MIOS = v.mios || null;
+    PASO = 0; while (PASO < V.pasos.length - 1 && B.pasos[V.pasos[PASO]]) PASO++;
+    pintar();
+  }).catch(function (e) { fallo(e.message, true); });
+})();
+</script>
+</body>
+</html>

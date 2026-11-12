@@ -439,7 +439,7 @@ var App = (function () {
   var I = {};
   var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var VERSION = '0.5.0', T0 = Date.now();
+  var VERSION = '0.6.0', T0 = Date.now();
 
   // ---------- Utilidades ----------
   var memoria = {};
@@ -1404,7 +1404,7 @@ var App = (function () {
     $('titulo').textContent = 'Clientes';
     var q = norm(S.filtro), lista = S.snap.clientes.filter(function (c) { return !q || norm(c.nombre + ' ' + c.id).indexOf(q) >= 0; })
       .sort(function (a, b) { return (a.estado === 'activo' ? 0 : 1) - (b.estado === 'activo' ? 0 : 1) || (a.nombre < b.nombre ? -1 : 1); });
-    $('main').innerHTML = '<div class="buscar"><input type="search" placeholder="Buscar cliente" value="' + esc(S.filtro) + '" oninput="App.filtro(this.value)"><button class="btn" onclick="App.ir(\'alta\')">' + ico('alta') + 'Alta</button></div><div class="caja">' +
+    $('main').innerHTML = '<div class="buscar"><input type="search" placeholder="Buscar cliente" value="' + esc(S.filtro) + '" oninput="App.filtro(this.value)"><button class="btn" onclick="App.nuevaAlta()">' + ico('alta') + 'Alta</button><button class="btn" onclick="App.invitar()">' + ico('chat') + 'A distancia</button></div>' + htmlAltasDistancia() + '<div class="caja">' +
       lista.map(function (c) {
         var marcas = [], nav = (I.av[c.id] || []).length;
         if (!c.consentimiento) marcas.push('<span class="chip a" title="Sin consentimiento">' + ico('doc') + '<span class="t">sin consentimiento</span></span>');
@@ -1428,7 +1428,7 @@ var App = (function () {
       '<div class="chips"><span class="chip ' + (c.consentimiento ? 'v' : 'a') + '">' + ico('doc') + (c.consentimiento ? 'Consentimiento ' + fechaMedia(c.consentimiento) : 'Sin consentimiento registrado') + '</span>' + (tocaValorar(cid) ? '<span class="chip z">' + ico('regla') + 'Toca valorar</span>' : '') + '</div></div>' +
       '<div class="acciones">' + (tel ? '<a class="btn mini" href="tel:' + esc(tel) + '">' + ico('tel') + 'Llamar</a><a class="btn mini" href="https://wa.me/' + esc(wa) + '" target="_blank">' + ico('chat') + 'WhatsApp</a>' : '') +
       '<button class="btn mini" onclick="App.ir(\'seguridad\',\'' + cid + '\')">' + ico('escudo') + 'Seguridad</button><button class="btn mini" onclick="App.ir(\'valoracion\',\'' + cid + '\')">' + ico('regla') + 'Valoración</button>' +
-      '<button class="btn mini" onclick="App.documento(\'' + cid + '\')">' + ico('doc') + 'Documento</button><button class="btn mini" onclick="App.editarCliente(\'' + cid + '\')">' + ico('lapiz') + 'Datos</button>' +
+      '<button class="btn mini" onclick="App.documento(\'' + cid + '\')">' + ico('doc') + 'Documento</button><button class="btn mini" onclick="App.pedirFirma(\'' + cid + '\')">' + ico('lapiz') + 'Pedir firma</button><button class="btn mini" onclick="App.editarCliente(\'' + cid + '\')">' + ico('lapiz') + 'Datos</button>' +
       (c.ficha ? '<a class="btn mini" href="' + esc(c.ficha) + '" target="_blank">Ficha v4</a>' : '') + (c.carpeta ? '<a class="btn mini" href="' + esc(c.carpeta) + '" target="_blank">Carpeta</a>' : '') + '</div></div>';
     h += '<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('escudo') + 'Seguridad</div><div class="kpi"><div>Techo de RPE<b>' + (t !== null ? fmtNum(t) : '—') + '</b></div><div>Condiciones confirmadas<b>' + (I.cond[cid] || []).filter(function (x) { return x.estado === 'confirmada'; }).length + '</b></div>' +
       '<div>Por revisar<b class="' + (cuenta(/^revisar$/) ? 'amb-txt' : '') + '">' + cuenta(/^revisar$/) + '</b></div><div>En prueba<b>' + cuenta(/^en prueba$/) + '</b></div><div>Descartados<b>' + cuenta(/^descartado/) + '</b></div></div>' + chipsCliente(cid, null) + '</div>';
@@ -1790,7 +1790,7 @@ var App = (function () {
 
   // ---------- Alta (con conexión) ----------
   function pintarAlta() {
-    $('titulo').textContent = 'Alta de cliente';
+    $('titulo').textContent = S.altaInv ? 'Revisar alta a distancia' : 'Alta de cliente';
     var L = listas(), otros = clientesActivos().map(function (x) { return [x.id, x.nombre]; });
     $('main').innerHTML = '<div class="fila-dia"><button class="btn mini" onclick="App.ir(\'clientes\')">‹ Clientes</button><div class="dia">Cliente nuevo</div></div>' +
       '<div class="card"><div class="rejilla"><div class="campo"><label>Nombre y apellidos</label><input type="text" id="a-nombre" autocomplete="off"></div><div class="campo"><label>Teléfono</label><input type="tel" id="a-tel"></div>' +
@@ -1801,7 +1801,8 @@ var App = (function () {
       '<div class="campo"><label>Objetivos</label><textarea id="a-obj"></textarea></div><div class="campo"><label>Condiciones que cuenta (una por línea; entran «por confirmar»)</label><textarea id="a-cond" placeholder="Rodilla derecha operada (2024)&#10;Tensión alta con medicación"></textarea></div>' +
       htmlAltaV4() +
       '<div class="nota n">Crea el código siguiente, su carpeta en «1 Clientes/Activos» y sus condiciones por confirmar. Con «también en v4»: su ficha, su fila en PERFILES y en el PANEL, y en Carena su techo de RPE, límites y contraindicaciones; la sincronización enlaza la ficha a este código (no lo duplica). Su primer mes lo generas en v4, como siempre. Con el consentimiento firmado, sube la foto desde su ficha (Documento).</div>' +
-      '<div id="a-estado"></div><div class="pie-modal"><button class="btn pri" id="a-ok" onclick="App.guardarAlta()">' + ico('alta') + 'Dar de alta</button></div></div>';
+      '<div id="a-estado"></div><div class="pie-modal"><button class="btn pri" id="a-ok" onclick="App.guardarAlta()">' + ico('alta') + (S.altaInv ? 'Activar el alta' : 'Dar de alta') + '</button></div></div>';
+    if (S.altaInv) prepararRevision();
   }
   function htmlAltaV4() {
     var voc = S.snap.v4vocab || [], cats = {};
@@ -1834,13 +1835,161 @@ var App = (function () {
       if (!contras.length) falta.push('contraindicaciones (o «Ninguna»)');
       if (falta.length) { $('a-estado').innerHTML = '<div class="nota r">Para crearlo también en v4 falta: ' + esc(falta.join(', ')) + '.</div>'; $('a-estado').scrollIntoView({ block: 'center' }); return; }
     }
+    if (S.altaInv) {
+      d.invitacion = S.altaInv.id; d.suelo = val('a-suelo'); d.objetivo = val('a-objetivo'); d.duracion = val('a-dur'); d.tarifa = val('a-tarifa'); d.decisiones = S.altaDec || {};
+      var pend = (S.altaInv.cuestionarios || []).filter(function (c) { return c.propuesta && !d.decisiones[c.id]; });
+      var faltaR = []; if (!d.suelo) faltaR.push('puede ir al suelo'); if (!d.v4) faltaR.push('perfil operativo (techo de RPE y límites): marca «Crear también en v4»'); if (pend.length) faltaR.push('decidir lo que propone ' + pend.map(function (c) { return c.instrumento; }).join(', '));
+      if (faltaR.length) { $('a-estado').innerHTML = '<div class="nota r">Para activar falta: ' + esc(faltaR.join('; ')) + '.</div>'; $('a-estado').scrollIntoView({ block: 'center' }); return; }
+    }
     $('a-ok').disabled = true; $('a-estado').innerHTML = '<div class="nota n">' + ico('reloj') + (d.v4 ? ' Creando su código y su carpeta en Carena, y su ficha y su fila en el PANEL de v4…' : ' Creando su código y su carpeta en Carena…') + '</div>';
+    var deInv = S.altaInv;
     google.script.run.withSuccessHandler(function (r) {
       registrarLocal('alta', { cliente: r.cliente, condiciones: r.condiciones || [], documento: r.documento || null, limites: r.limites || [] });
+      if (deInv) { S.altaInv = null; S.snap.altas = (S.snap.altas || []).map(function (x) { return x.id === deInv.id ? Object.assign({}, x, { estado: 'activada', cliente: r.id }) : x; });
+        if (r.vinculo && r.vinculo.error) setTimeout(function () { modal('<h3>Alta hecha: ' + esc(r.id) + '</h3><div class="nota r">No se pudieron pasar sus documentos y cuestionarios: ' + esc(r.vinculo.error) + '</div><div class="pie-modal"><button class="btn pri" onclick="App.vincularAlta(\'' + deInv.id + '\',\'' + r.id + '\')">Volver a intentarlo</button></div>'); }, 400); }
       ir('cliente', r.id);
       if (r.v4 && r.v4.error) modal('<h3>Alta hecha en Carena: ' + esc(r.id) + '</h3><div class="nota r">No se pudo completar en v4: ' + esc(r.v4.error) + '</div><div class="pie-modal"><button class="btn pri" onclick="App.cerrarModal()">Entendido</button></div>');
       else toast('Alta hecha: ' + r.id + (r.v4 ? ' · también en v4 (ficha y PANEL)' : ''));
-    }).withFailureHandler(function (e) { $('a-ok').disabled = false; $('a-estado').innerHTML = '<div class="nota r">' + esc(e && e.message || e) + '</div>'; }).apiAlta(d);
+    }).withFailureHandler(function (e) { $('a-ok').disabled = false; $('a-estado').innerHTML = '<div class="nota r">' + esc(e && e.message || e) + '</div>'; })[deInv ? 'apiActivarAlta' : 'apiAlta'](d);
+  }
+
+
+  // ---------- Altas a distancia y firma de documentos (0.6) ----------
+  var ET_INV = { abierta: ['Esperando al cliente', 'z'], enviada: ['Para revisar', 'a'], activada: ['Hecha', 'v'], anulada: ['Anulada', ''], caducada: ['Caducada', 'r'] };
+  function htmlAltasDistancia() {
+    var a = S.snap.altas || [], faltan = S.snap.altaFaltan || [];
+    if (!a.length && !faltan.length) return '';
+    return '<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span style="display:flex;gap:8px;align-items:center">' + ico('chat') + 'Altas a distancia y firmas</span>' +
+      '<button class="btn mini" onclick="App.firmaTodos()">' + ico('lapiz') + 'Firma para todos los activos</button></div>' +
+      (faltan.length ? '<div class="nota a">Para poder enviar enlaces falta rellenar en el libro Conocimiento › Ajustes: ' + esc(faltan.join(', ')) + '.</div>' : '') +
+      a.map(function (x) {
+        var e = ET_INV[x.estado] || [x.estado, ''], bot = '';
+        if (x.estado === 'enviada' && x.tipo === 'alta') bot = '<button class="btn mini pri" onclick="App.revisarAlta(\'' + x.id + '\')">Revisar</button>';
+        else if (x.estado === 'abierta' || x.estado === 'caducada') bot = '<button class="btn mini" onclick="App.renovarInv(\'' + x.id + '\')">Enlace nuevo</button>' + (x.estado === 'abierta' ? '<button class="btn mini" onclick="App.anularInv(\'' + x.id + '\')">Anular</button>' : '');
+        else if (x.cliente) bot = '<button class="btn mini" onclick="App.ir(\'cliente\',\'' + x.cliente + '\')">Ver</button>';
+        var det = x.estado === 'abierta' ? 'caduca el ' + fechaMedia(x.caduca) + (x.pasos.length ? ' · lleva ' + x.pasos.length + (x.pasos.length === 1 ? ' paso' : ' pasos') : ' · sin empezar')
+          : x.enviada ? 'enviada el ' + fechaMedia(x.enviada) : '';
+        return '<div class="preg"><div><b>' + esc(x.nombre) + '</b> <span class="chip ' + e[1] + '">' + esc(e[0]) + '</span><div class="sub">' + (x.tipo === 'firma' ? 'Firma de documentos' : 'Alta') + (det ? ' · ' + det : '') + '</div></div><div class="acciones" style="margin:0">' + bot + '</div></div>';
+      }).join('') + '</div>';
+  }
+  function nuevaAlta() { S.altaInv = null; S.altaDec = {}; ir('alta'); }
+  function invitar() {
+    if (!enLinea()) { toast('Los enlaces necesitan conexión'); return; }
+    modal('<h3>Alta a distancia</h3><div class="sub">El cliente rellena en su móvil sus datos, firma los documentos, su salud, su entrenamiento y los cuestionarios que le toquen. Te llega para revisar: no se activa sola.</div>' +
+      '<div class="campo"><label for="inv-nom">Nombre y apellidos</label><input type="text" id="inv-nom" autocomplete="off"></div><div class="rejilla"><div class="campo"><label for="inv-tel">Teléfono (para mandarlo por WhatsApp)</label><input type="tel" id="inv-tel"></div>' +
+      '<div class="campo"><label for="inv-email">Email (opcional)</label><input type="email" id="inv-email"></div></div><div id="inv-estado"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" id="inv-ok" onclick="App.crearInvitacion()">Crear enlace</button></div>');
+  }
+  function crearInvitacion(cid) {
+    var d = cid ? { tipo: 'firma', cliente: cid } : { tipo: 'alta', nombre: val('inv-nom'), telefono: val('inv-tel'), email: val('inv-email') };
+    if (!cid && d.nombre.split(/\s+/).length < 2) { $('inv-estado').innerHTML = '<div class="nota r">Escribe nombre y apellido.</div>'; return; }
+    if ($('inv-ok')) { $('inv-ok').disabled = true; $('inv-estado').innerHTML = '<div class="nota n">' + ico('reloj') + ' Creando el enlace…</div>'; }
+    google.script.run.withSuccessHandler(function (r) {
+      S.snap.altas = [{ id: r.id, tipo: r.tipo, cliente: r.cliente || '', nombre: r.nombre, estado: 'abierta', creada: '', caduca: r.caduca, enviada: '', pasos: [] }].concat(S.snap.altas || []);
+      enlaceListo(r, cid ? (I.C[cid] || {}).telefono : d.telefono);
+    }).withFailureHandler(function (e) { if ($('inv-ok')) { $('inv-ok').disabled = false; $('inv-estado').innerHTML = '<div class="nota r">' + esc(e && e.message || e) + '</div>'; } else toast(String(e && e.message || e)); }).apiInvitar(d);
+  }
+  function numWa(t) { t = String(t || '').replace(/[^\d+]/g, ''); return t ? (t.charAt(0) === '+' ? t.slice(1) : (t.length === 9 ? '34' + t : t)) : ''; }
+  function textoInv(r) {
+    var nom = String(r.nombre || '').split(' ')[0];
+    return r.tipo === 'firma' ? 'Hola, ' + nom + '. Te paso los documentos nuevos del entrenamiento para leerlos y firmarlos desde el móvil (5 minutos). Al terminar te llega una copia por correo: ' + r.enlace
+      : 'Hola, ' + nom + '. Este es el enlace para tu alta del entrenamiento a domicilio: tus datos, los documentos para firmar y unas preguntas de salud (unos 15 minutos). Se guarda al pasar de paso, así que puedes dejarlo y seguir luego: ' + r.enlace;
+  }
+  function enlaceListo(r, tel) {
+    S.ultEnlace = r.enlace;
+    var wa = numWa(tel), txt = encodeURIComponent(textoInv(r));
+    modal('<h3>Enlace listo · ' + esc(r.nombre) + '</h3><div class="sub">Un solo uso; vale hasta el ' + fechaMedia(r.caduca) + '. Solo se enseña ahora: si lo pierdes, pide uno nuevo desde Clientes.</div>' +
+      '<div class="campo"><input type="text" readonly id="inv-enl" value="' + esc(r.enlace) + '" onclick="this.select()"></div>' +
+      '<div class="acciones"><button class="btn mini" onclick="App.copiarEnlace()">' + ico('doc') + 'Copiar</button><a class="btn mini" target="_blank" rel="noopener" href="https://wa.me/' + esc(wa) + '?text=' + txt + '">' + ico('chat') + 'WhatsApp</a>' +
+      '<a class="btn mini" target="_blank" rel="noopener" href="' + esc(r.enlacePersona || r.enlace) + '">' + ico('alta') + 'Rellenarlo aquí, en persona</a></div>' +
+      '<div class="pie-modal"><button class="btn pri" onclick="App.cerrarModal();App.pintarYa()">Hecho</button></div>');
+  }
+  function copiarEnlace() {
+    var i = $('inv-enl'), t = S.ultEnlace || (i && i.value) || '';
+    var ok = function () { toast('Enlace copiado'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, function () { if (i) { i.select(); document.execCommand('copy'); ok(); } });
+    else if (i) { i.select(); document.execCommand('copy'); ok(); }
+  }
+  function pedirFirma(cid) {
+    if (!enLinea()) { toast('Los enlaces necesitan conexión'); return; }
+    modal('<h3>Pedir firma de documentos</h3><div class="sub">' + esc(nombreCli(cid)) + ' recibe un enlace para leer y firmar los documentos vigentes (consentimiento, protección de datos, condiciones y uso de imagen). Al terminar le llega la copia y aquí quedan en Documentos.</div><div id="inv-estado"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" id="inv-ok" onclick="App.crearInvitacion(\'' + cid + '\')">Crear enlace</button></div>');
+  }
+  function firmaTodos() {
+    if (!enLinea()) { toast('Los enlaces necesitan conexión'); return; }
+    modal('<h3>Firma para todos los activos</h3><div class="sub">Un enlace de firma para cada cliente activo que no tenga firmados los documentos vigentes (y no tenga ya uno abierto). Después se los mandas uno a uno.</div><div id="inv-estado"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" id="inv-ok" onclick="App.firmaTodosOk()">Crear los enlaces</button></div>');
+  }
+  function firmaTodosOk() {
+    $('inv-ok').disabled = true; $('inv-estado').innerHTML = '<div class="nota n">' + ico('reloj') + ' Creando enlaces…</div>';
+    google.script.run.withSuccessHandler(function (lista) {
+      S.firmas = lista;
+      lista.forEach(function (r) { S.snap.altas = [{ id: r.id, tipo: 'firma', cliente: r.cliente, nombre: r.nombre, estado: 'abierta', creada: '', caduca: r.caduca, enviada: '', pasos: [] }].concat(S.snap.altas || []); });
+      modal('<h3>' + lista.length + ' enlaces de firma</h3><div class="sub">Mándaselos por WhatsApp. Valen hasta el ' + (lista[0] ? fechaMedia(lista[0].caduca) : '') + '.</div>' +
+        (lista.length ? lista.map(function (r) { return '<div class="preg"><div><b>' + esc(r.nombre) + '</b><div class="sub">' + esc(r.cliente) + '</div></div><a class="btn mini" target="_blank" rel="noopener" href="https://wa.me/' + esc(numWa(r.telefono)) + '?text=' + encodeURIComponent(textoInv(r)) + '">' + ico('chat') + 'WhatsApp</a></div>'; }).join('')
+          : '<div class="nota v">Todos los activos tienen firmados los documentos vigentes o un enlace abierto.</div>') +
+        '<div class="pie-modal"><button class="btn pri" onclick="App.cerrarModal();App.pintarYa()">Hecho</button></div>');
+    }).withFailureHandler(function (e) { $('inv-ok').disabled = false; $('inv-estado').innerHTML = '<div class="nota r">' + esc(e && e.message || e) + '</div>'; }).apiInvitarFirmaActivos();
+  }
+  function renovarInv(id) {
+    if (!enLinea()) { toast('Necesita conexión'); return; }
+    var x = (S.snap.altas || []).filter(function (a) { return a.id === id; })[0] || {};
+    google.script.run.withSuccessHandler(function (r) {
+      x.estado = 'abierta'; x.caduca = r.caduca;
+      enlaceListo(Object.assign({ nombre: x.nombre, tipo: x.tipo }, r), x.cliente ? (I.C[x.cliente] || {}).telefono : '');
+    }).withFailureHandler(function (e) { toast(String(e && e.message || e)); }).apiRenovarInvitacion(id);
+  }
+  function anularInv(id) {
+    google.script.run.withSuccessHandler(function () { S.snap.altas = (S.snap.altas || []).filter(function (a) { return a.id !== id; }); toast('Enlace anulado'); pintar(); })
+      .withFailureHandler(function (e) { toast(String(e && e.message || e)); }).apiAnularInvitacion(id);
+  }
+  function revisarAlta(id) {
+    if (!enLinea()) { toast('Necesita conexión'); return; }
+    toast('Abriendo el alta…');
+    google.script.run.withSuccessHandler(function (r) { S.altaInv = r; S.altaDec = {}; ir('alta'); })
+      .withFailureHandler(function (e) { toast(String(e && e.message || e)); }).apiInvitaciones(id);
+  }
+  function decidirCu(id, v) { S.altaDec = S.altaDec || {}; S.altaDec[id] = v; var c = (S.altaInv.cuestionarios || []).filter(function (x) { return x.id === id; })[0];
+    var m = c && /\[([a-z_]+)\]/.exec(c.propuesta || ''); if (m) { var x = document.querySelector('input[name=a-contra][value="' + m[1] + '"]'); if (x) x.checked = v === 'aceptada'; }
+    [].forEach.call(document.querySelectorAll('[data-cu="' + id + '"]'), function (b) { b.classList.toggle('pri', b.getAttribute('data-v') === v); }); }
+  function vincularAlta(inv, cid) {
+    google.script.run.withSuccessHandler(function () { cerrarModal(); toast('Documentos y cuestionarios pasados a ' + cid); })
+      .withFailureHandler(function (e) { toast(String(e && e.message || e)); }).apiVincularAlta(inv, cid, {});
+  }
+  function prepararRevision() {
+    var r = S.altaInv, d = r.datos || {}, s = r.salud || {}, e = r.entrenamiento || {}, em = d.emergencia || {};
+    var set = function (id, v) { var x = $(id); if (x && v !== undefined && v !== null) x.value = v; };
+    set('a-nombre', d.nombre); set('a-tel', d.telefono); set('a-nac', d.nacimiento); set('a-sexo', d.sexo); set('a-email', d.email);
+    set('a-hor', e.disponibilidad || ''); set('a-obj', [(e.objetivos || []).join(', '), e.objetivosTexto].filter(Boolean).join('. '));
+    var voc = (S.snap.v4vocab || []).map(function (t) { return t.tag; }), lineas = [];
+    (s.declaradas || []).forEach(function (c) {
+      var x = c.etiqueta && voc.indexOf(c.etiqueta) >= 0 ? document.querySelector('input[name=a-contra][value="' + c.etiqueta + '"]') : null;
+      if (x) x.checked = true; else lineas.push(c.texto + (c.etiqueta ? ' (etiqueta propuesta: ' + c.etiqueta + ')' : ''));
+    });
+    if (s.otras) lineas.push(s.otras); if (s.operaciones) lineas.push('Operaciones: ' + s.operaciones); if (s.medicacion) lineas.push('Medicación: ' + s.medicacion);
+    set('a-cond', lineas.join('\n'));
+    var cons = $('a-cons'); if (cons) cons.closest('.campo').hidden = true;
+    var nada = !(s.declaradas || []).length && !lineas.length; if (nada && $('a-ninguna')) { $('a-ninguna').checked = true; altaNinguna(true); }
+    var fila = function (k, v) { return v ? '<div class="sub" style="margin-top:4px"><b>' + esc(k) + ':</b> ' + esc(v) + '</div>' : ''; };
+    var cu = (r.cuestionarios || []).map(function (c) {
+      return '<div class="preg"><div><b>' + esc(c.instrumento) + '</b>' + (c.puntuacion !== '' && c.puntuacion !== null ? ' · ' + esc(c.puntuacion) : '') + (c.sub ? ' · ' + esc(c.sub) : '') + (c.interpretacion ? ' · ' + esc(c.interpretacion) : '') +
+        (c.propuesta ? '<div class="sub">Propone: ' + esc(c.propuesta) + '</div>' : '') + '</div>' +
+        (c.propuesta ? '<div class="acciones" style="margin:0"><button class="btn mini" data-cu="' + c.id + '" data-v="aceptada" onclick="App.decidirCu(\'' + c.id + '\',\'aceptada\')">Aceptar</button><button class="btn mini" data-cu="' + c.id + '" data-v="rechazada" onclick="App.decidirCu(\'' + c.id + '\',\'rechazada\')">No</button></div>' : '') + '</div>';
+    }).join('');
+    var panel = '<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('chat') + 'Lo que ha enviado · ' + esc(r.id) + '</div>' +
+      '<div class="sub">Las condiciones con etiqueta conocida ya están marcadas abajo; el resto va en «Condiciones que cuenta» (entran por confirmar). Techo de RPE y límites los pones tú: nada de esto se aplica solo.</div>' +
+      fila('Enviada', fechaMedia(r.enviada)) + fila('Contacto de emergencia', [em.nombre, em.relacion, em.telefono].filter(Boolean).join(' · ')) + fila('Dirección', d.direccion) +
+      fila('Peso y altura', [s.peso ? s.peso + ' kg' : '', s.altura ? s.altura + ' cm' : ''].filter(Boolean).join(' · ')) + fila('Profesionales que le tratan', s.profesionales) +
+      fila('Experiencia', e.experiencia) + fila('Actividad fuera', e.actividad) + fila('Material en casa', e.material) + fila('Espacio', e.espacio) +
+      (r.firma ? fila('Documentos', 'firmados el ' + fechaMedia(r.firma.fecha) + (r.firma.modo === 'en persona' ? ' en persona' : ' por enlace')) : '') +
+      (cu ? '<div style="margin-top:12px"><b>Cuestionarios</b>' + cu + '</div>' : '') +
+      (r.carpeta ? '<div class="acciones"><a class="btn mini" target="_blank" rel="noopener" href="' + esc(r.carpeta) + '">' + ico('doc') + 'PDF firmados y alta del cliente</a></div>' : '') +
+      '<div class="v4tit">Lo que decides tú</div><div class="rejilla">' +
+      '<div class="campo"><label for="a-suelo">Puede ir al suelo (contestó: ' + esc(s.suelo || '—') + ')</label><select id="a-suelo">' + opts(['sí', 'con ayuda', 'no'], s.suelo || '', '—') + '</select></div>' +
+      '<div class="campo"><label for="a-objetivo">Objetivo</label><select id="a-objetivo">' + opts(['progresar', 'mantener'], 'progresar') + '</select></div>' +
+      '<div class="campo"><label for="a-dur">Duración de la visita (min)</label><input type="text" inputmode="numeric" id="a-dur" value="60"></div>' +
+      '<div class="campo"><label for="a-tarifa">Tarifa</label><input type="text" id="a-tarifa" placeholder="25 € por sesión"></div></div></div>';
+    var card = document.querySelector('#main .card'); if (card) card.insertAdjacentHTML('beforebegin', panel);
   }
 
   // ---------- Catálogo ----------
@@ -2140,7 +2289,8 @@ var App = (function () {
            relajarListo: relajarListo, guardarRelajar: guardarRelajar,
            valSet: valSet, valFila: valFila, valQuitar: valQuitar, valDescartar: valDescartar, valAnadir: valAnadir, valFiltrar: valFiltrar, valElegir: valElegir, guardarValoracion: guardarValoracion,
            documento: documento, docArchivo: docArchivo, guardarDocumento: guardarDocumento, editarCliente: editarCliente, guardarCliente: guardarCliente,
-           guardarAlta: guardarAlta, guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, _S: S, _I: function () { return I; } };
+           guardarAlta: guardarAlta, nuevaAlta: nuevaAlta, invitar: invitar, crearInvitacion: crearInvitacion, copiarEnlace: copiarEnlace, pedirFirma: pedirFirma, firmaTodos: firmaTodos, firmaTodosOk: firmaTodosOk,
+           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, _S: S, _I: function () { return I; } };
 })();
 </script>
 </body>

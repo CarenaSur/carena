@@ -389,6 +389,21 @@ label.casilla>span{flex:1;min-width:0;line-height:1.35}
 .pie-modal{flex-wrap:wrap}
 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.prop-linea{margin-top:8px;padding-top:8px;border-top:1px dashed var(--piedra)}
+.prop-linea .chips{margin-top:6px;align-items:center}
+.sec-prop{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--sec);margin:16px 0 2px}
+.fp{border-top:1px solid var(--piedra-cl);padding:9px 0}
+.sec-prop+.fp{border-top:0}
+.fp>summary{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:start}
+.fp .num{color:var(--sec);font-size:12.5px;text-align:right;padding-top:2px}
+.fp .nom{font-weight:600}
+.fp .chips{display:flex;margin-top:3px}
+.fp .dz{font-weight:600;white-space:nowrap;text-align:right}
+.fp.q>summary .nom,.fp.q>summary .dz{text-decoration:line-through;opacity:.5}
+.fp .det{padding:6px 0 2px 28px}
+.fp.vac{padding-left:28px}
+.fp .btn.mini{text-align:left;white-space:normal}
+.ej .consigna{font-size:12.5px;color:var(--sec);margin-top:2px}
 </style>
 </head>
 <body>
@@ -444,7 +459,7 @@ label.casilla>span{flex:1;min-width:0;line-height:1.35}
 /* Carena · app instalable. Sustituye a google.script.run: las mismas llamadas viajan por HTTPS a la puerta de Carena
    con la llave de este dispositivo. Sin llave, pide el código de vincular. La llave no sale nunca en una dirección. */
 (function () {
-  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.6.0';
+  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.7.0';
   function leer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function poner(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
   function pedir(cuerpo) {
@@ -552,12 +567,12 @@ label.casilla>span{flex:1;min-width:0;line-height:1.35}
    que se envía sola cuando hay red; lo que aún no ha llegado a Carena se vuelve a aplicar sobre los datos al actualizar.
    La línea roja: endurecer es libre; relajar pide motivo y confirmación (y el servidor lo vuelve a comprobar). */
 var App = (function () {
-  var K = { snap: 'carena.snap.v1', cola: 'carena.cola.v1', reg: 'carena.reg.v1', hechas: 'carena.hechas.v1', hist: 'carena.hist.v1', salt: 'carena.salt.v1' };
+  var K = { snap: 'carena.snap.v1', cola: 'carena.cola.v1', reg: 'carena.reg.v1', hechas: 'carena.hechas.v1', hist: 'carena.hist.v1', salt: 'carena.salt.v1', ped: 'carena.ped.v1' };
   var S = { snap: null, vista: 'hoy', dia: null, reg: null, cola: [], red: 'ok', enviando: false, espera: 0, cli: null, filtro: '', cache: {}, sel: {} };
   var I = {};
   var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var VERSION = '0.6.0', T0 = Date.now();
+  var VERSION = '0.7.0', T0 = Date.now();
 
   // ---------- Utilidades ----------
   var memoria = {};
@@ -736,6 +751,8 @@ var App = (function () {
     if (o.tipo === 'cerrarSesion') return 'Sesión · ' + nombreCli(d.sesion.cliente) + ' · ' + fechaCorta(d.sesion.fecha);
     if (o.tipo === 'seguridad') return 'Seguridad · ' + (d.cambios || []).map(function (c) { return nombreCorto(c.cliente); }).filter(function (x, i, a) { return a.indexOf(x) === i; }).join(', ');
     if (o.tipo === 'aviso') return 'Avisos revisados · ' + (d.ids || []).length;
+    if (o.tipo === 'responder') return 'Respuesta a Carena · ' + nombreCorto(d.cliente) + ' · ' + d.respuesta;
+    if (o.tipo === 'planificador') return 'Planificación de ' + nombreCli(d.cliente);
     if (o.tipo === 'manana') return 'Pregunta de la mañana · ' + nombreCorto(d.cliente);
     if (o.tipo === 'valoracion') return 'Valoración · ' + nombreCli(d.cliente);
     if (o.tipo === 'catalogo') return 'Catálogo' + (d.accion === 'nuevo' ? ' · ejercicio nuevo' : '');
@@ -764,6 +781,16 @@ var App = (function () {
       Object.keys(c.campos || {}).forEach(function (col) { if (m[col]) fila[m[col]] = c.campos[col]; });
       if (c.tabla === 'Tolerancia' && 'Estado' in c.campos) { fila.propuesta = ''; fila.desde = hoyIso(); }
     });
+    else if (op.tipo === 'responder') {
+      var pr = s.planificador && s.planificador.propuestas ? s.planificador.propuestas[d.cliente] : null;
+      ((pr && pr.preguntas) || []).forEach(function (q) { if (q.id === d.pregunta && !q.respuesta) q.respuesta = d.respuesta; });
+    }
+    else if (op.tipo === 'planificador') {
+      var cp = s.clientes.filter(function (x) { return x.id === d.cliente; })[0]; if (!cp) return;
+      Object.keys(d.campos || {}).forEach(function (col) { if (CAMPOS_PLAN[col]) cp[CAMPOS_PLAN[col]] = d.campos[col]; });
+      var pp = s.planificador && s.planificador.propuestas ? s.planificador.propuestas[d.cliente] : null;
+      if (pp && 'Planifica' in d.campos) pp.sombra = d.campos['Planifica'] !== 'Carena';
+    }
     else if (op.tipo === 'aviso') s.avisos = (s.avisos || []).filter(function (a) { return (d.ids || []).indexOf(a.id) < 0; });
     else if (op.tipo === 'manana') s.preguntas = (s.preguntas || []).filter(function (p) { return p.fila !== d.fila; });
     else if (op.tipo === 'valoracion') {
@@ -872,6 +899,317 @@ var App = (function () {
   function pintarBadge() {
     var n = paraHoy().total, b = $('badge'), t = n ? String(n) : '';
     if (b.textContent !== t) { b.textContent = t; b.classList.remove('bote'); void b.offsetWidth; if (t) b.classList.add('bote'); }
+  }
+
+  // ---------- Planificador: lo que propone Carena para cada visita ----------
+  var CAMPOS_PLAN = { 'Puede ir al suelo': 'suelo', 'Objetivo': 'objetivo', 'Planifica': 'planifica', 'Duración de la visita (min)': 'duracion', 'Ejercicio ancla': 'ancla', 'Material en casa': 'materialCasa' };
+  var RANGO_SUELO = { '': 0, 'no': 0, 'con ayuda': 1, 'sí': 2 };
+  var ETQ_SESION = ['fluida', 'justa de tiempo', 'sobró tiempo', 'demasiado fácil', 'demasiado dura', 'faltó material', 'cliente con mal día'];
+  function PLN() { var p = S.snap && S.snap.planificador; return p && p.propuestas ? p : { propuestas: {}, enfoques: [], hallazgos: {} }; }
+  function propDe(cid, dia) { var p = PLN().propuestas[cid]; return p && p.fecha === dia ? p : null; }
+  function conCarena(cid) { return (I.C[cid] || {}).planifica === 'Carena'; }
+  function pregDe(p, clase, tipo) { return ((p && p.preguntas) || []).filter(function (q) { return q.clase === clase && q.tipo === tipo; })[0] || null; }
+  function nombreEnfoque(id) { var e = (PLN().enfoques || []).filter(function (x) { return x.id === id; })[0]; return e ? e.nombre : id; }
+  function ediciones(pid) { return leer(K.ped, {})[pid] || {}; }
+  function editar(pid, hueco, e) {
+    var t = leer(K.ped, {}), vivas = {}; Object.keys(PLN().propuestas).forEach(function (c) { vivas[PLN().propuestas[c].id] = true; });
+    Object.keys(t).forEach(function (k) { if (!vivas[k]) delete t[k]; });               // las de propuestas que ya no existen se tiran
+    t[pid] = t[pid] || {}; if (e) t[pid][String(hueco)] = e; else delete t[pid][String(hueco)];
+    guardar(K.ped, t);
+  }
+  /** El cambio de una pregunta aceptada, sobre la propuesta. Hace lo mismo que el motor al rehacerla: aplicarlo dos veces no cambia nada. */
+  function aplicarCambio(p, q) {
+    var c = q.cambio || {}, fila = function (id) { return p.filas.filter(function (f) { return f.seccion === 'principal' && f.ejercicio === id; })[0]; };
+    var carga = function (f, x) { if (x.kg !== null && x.kg !== undefined) { f.kg = x.kg; f.color = ''; f.carga = x.carga; } else if (x.color) { f.color = x.color; f.kg = null; f.carga = x.carga; } };
+    if (c.rondas) { p.rondas = c.rondas; p.filas.forEach(function (f) { if (f.seccion === 'principal') f.rondas = c.rondas; }); }
+    (c.pasos || []).forEach(function (x) { var f = fila(x.ejercicio); if (f) carga(f, x); });
+    if (c.ejercicio && c.clase === 'ejercicio') {
+      var f = fila(c.ejercicio);
+      if (f) { f.ejercicio = c.nuevo; f.nombre = c.nombre; f.dosis = c.dosis; f.carga = c.carga; f.kg = c.kg; f.color = c.color; f.enPrueba = !!c.enPrueba; if (c.enPrueba) f.elegido = true; f.nucleo = false; f.opciones = []; }
+    } else if (c.ejercicio && (c.clase === 'reps' || c.clase === 'carga')) {
+      var g = fila(c.ejercicio);
+      if (g) { if (c.dosis) g.dosis = c.dosis; carga(g, c); }
+    }
+  }
+  /** La propuesta tal como se va a hacer: con lo que ya has aceptado y con lo que has cambiado tú antes de empezar. */
+  function propLista(cid, dia) {
+    var p0 = propDe(cid, dia); if (!p0) return null;
+    var p = JSON.parse(JSON.stringify(p0)); if (p.estado !== 'ok') return p;
+    var otra = p.pareja ? propDe(p.pareja, dia) : null;
+    (p.preguntas || []).forEach(function (q) {
+      if (q.respuesta !== 'sí') return;
+      if (q.tipo === 'subir' && q.clase === 'rondas' && p.pareja) { var qo = pregDe(otra, 'rondas', 'subir'); if (!qo || qo.respuesta !== 'sí') { q.espera = true; return; } }   // las rondas son de los dos
+      aplicarCambio(p, q);
+    });
+    var ed = ediciones(p.id), prueba = p.filas.some(function (f) { return f.enPrueba; });
+    var esta = function (id, salvo) { return p.filas.some(function (x) { return x !== salvo && !x.quitada && x.ejercicio === id; }); };
+    p.filas.forEach(function (f) {
+      if (f.seccion !== 'principal') return;
+      var e = ed[String(f.hueco)]; if (!e) return;
+      if (e.quitar) { f.quitada = true; if (f.enPrueba) prueba = p.filas.some(function (x) { return x !== f && x.enPrueba && !x.quitada; }); return; }
+      var o = (f.opciones || []).filter(function (x) { return x.ejercicio === e.op; })[0];
+      if (!o || esta(o.ejercicio, f)) return;                                  // la opción ya no vale en la propuesta rehecha: se queda lo propuesto
+      var otroEnPrueba = p.filas.some(function (x) { return x !== f && x.enPrueba && !x.quitada; });
+      if (o.sinProbar && otroEnPrueba) return;                                 // como mucho uno en prueba por sesión
+      f.original = f.nombre; f.ejercicio = o.ejercicio; f.nombre = o.nombre; f.dosis = o.dosis; f.carga = o.carga; f.kg = o.kg; f.color = o.color;
+      f.nucleo = false; f.nuevo = !o.veces; f.enPrueba = !!o.sinProbar; f.elegido = !!o.sinProbar; f.tuya = true;
+      prueba = otroEnPrueba || f.enPrueba;
+    });
+    (p.vacios || []).forEach(function (h) {
+      var e = ed[String(h.hueco)], o = e && e.op ? (h.opciones || []).filter(function (x) { return x.ejercicio === e.op; })[0] : null;
+      if (!o || prueba || esta(o.ejercicio, null)) return;
+      p.filas.push({ n: 80 + (Number(h.hueco) || 0), seccion: 'principal', hueco: h.hueco, etiqueta: h.etiqueta, ejercicio: o.ejercicio, nombre: o.nombre, dosis: o.dosis, carga: o.carga, kg: o.kg, color: o.color,
+                     rondas: p.rondas, enPrueba: true, elegido: true, nucleo: false, nuevo: !o.veces, opciones: [], alternativas: [], probar: [], tuya: true, deVacio: true, reglas: [], consigna: '',
+                     explicacion: 'Hueco ' + h.hueco + ' · ' + h.etiqueta + ' · lo has elegido tú: está sin probar y entra en prueba' });
+      h.cubierto = true; prueba = true;
+    });
+    var orden = { 'calentamiento': 0, 'principal': 1, 'vuelta a la calma': 2 };
+    p.filas = p.filas.map(function (f, i) { return [f, i]; }).sort(function (a, b) { return (orden[a[0].seccion] - orden[b[0].seccion]) || (a[1] - b[1]); }).map(function (x) { return x[0]; });
+    p.hayPrueba = prueba;
+    return p;
+  }
+  function dosisProp(f) { return (f.rondas ? f.rondas + '× ' : '') + ([f.dosis, f.carga].filter(Boolean).join(' · ') || '—'); }
+  function tituloProp(p) { return p.enfoque ? nombreEnfoque(p.enfoque) : 'Día ' + p.dia; }
+  function abiertas(p) { return ((p && p.preguntas) || []).filter(function (q) { return !q.respuesta; }); }
+  /** La línea de Carena dentro de la tarjeta de la visita. */
+  function htmlPropLinea(cid, dia, lista) {
+    var p = propLista(cid, dia);
+    if (!p) return conCarena(cid) ? '<div class="prop-linea"><span class="sub"><b>Carena</b> · todavía sin propuesta para este día</span> <button class="btn mini" onclick="App.pedirProp(\'' + lista + '\',\'' + dia + '\')">Pedirla</button></div>' : '';
+    if (p.estado !== 'ok') return '<div class="prop-linea"><span class="chip ' + (p.sombra ? 'a' : 'r') + '">' + ico(p.sombra ? 'alerta' : 'stop') + 'Carena no propone</span> <span class="sub">' + esc(((p.bloqueos || [])[0] || {}).texto || '') +
+      '</span> <button class="btn mini" onclick="App.ir(\'seguridad\',\'' + cid + '\')">' + ico('escudo') + 'Seguridad</button></div>';
+    var n = p.filas.filter(function (f) { return f.seccion === 'principal' && !f.quitada; }).length, ab = abiertas(p).length, vac = (p.vacios || []).filter(function (h) { return !h.cubierto; }).length, ch = [];
+    ch.push(p.sombra ? '<span class="chip">en sombra</span>' : '<span class="chip v">planifica Carena</span>');
+    if (ab) ch.push('<span class="chip a">' + ab + (ab === 1 ? ' pregunta' : ' preguntas') + '</span>');
+    if (p.filas.some(function (f) { return f.enPrueba && !f.quitada; })) ch.push('<span class="chip a">' + ico('alerta') + '1 en prueba</span>');
+    if (vac) ch.push('<span class="chip a">' + vac + (vac === 1 ? ' hueco vacío' : ' huecos vacíos') + '</span>');
+    return '<div class="prop-linea"><div class="sub"><b>Carena</b> · ' + esc(tituloProp(p)) + ' · ' + esc(p.fase) + (p.bloque ? ' · bloque ' + p.bloque + ', sesión ' + p.sesionBloque + ' de 8' : '') + ' · ' + n + ' principales · ' +
+      p.rondas + (p.rondas === 1 ? ' ronda' : ' rondas') + (p.minutos ? ' · unos ' + p.minutos.total + ' min' : '') + '</div><div class="chips">' + ch.join('') +
+      '<button class="btn mini" onclick="App.verProp(\'' + lista + '\',\'' + dia + '\')">' + ico('lista') + 'Ver propuesta</button></div></div>';
+  }
+  function verProp(lista, dia) { S.vp = { lista: lista.split(','), dia: dia || S.dia || hoyIso() }; pintarProp(); }
+  function cerrarProp() { S.vp = null; cerrarModal(); pintar(); }
+  function htmlPregPlan(cid, q) {
+    var T = { 'subir': ['Subir', 'v'], 'bajar': ['Bajar', 'a'], 'mantener aquí': ['Mantener aquí', 'z'], 'aceptar nivel': ['Aceptar este nivel', 'z'], 'revisar techo': ['Revisar el techo', 'z'] }[q.tipo] || [q.tipo, ''];
+    var acc = q.respuesta ? '<span class="chip ' + (q.respuesta === 'sí' ? 'v' : '') + '">' + (q.respuesta === 'sí' ? ico('check') + (q.espera ? 'Sí · falta la respuesta de su pareja' : 'Sí') : 'No') + '</span>'
+      : '<div class="escala"><button class="op v" onclick="App.plResp(\'' + cid + '\',\'' + q.id + '\',\'sí\')">Sí</button><button class="op" onclick="App.plResp(\'' + cid + '\',\'' + q.id + '\',\'no\')">No</button></div>';
+    return '<div class="preg"><div><div><span class="chip ' + T[1] + '">' + T[0] + '</span> <b>' + esc(q.ejercicio ? nombreEj(q.ejercicio) : 'Toda la sesión') + '</b></div><div style="margin-top:3px">' + esc(q.propuesta) + '</div>' +
+      '<div class="sub">' + esc(q.motivo) + (q.regla ? ' · regla ' + esc(q.regla) : '') + (q.motivoObligatorio && !q.respuesta ? ' · si dices que no, hay que escribir el motivo' : '') + '</div></div>' + acc + '</div>';
+  }
+  function htmlFilaProp(cid, p, f) {
+    var ch = [], pid = p.id, h = String(f.hueco), det = [];
+    if (f.nucleo) ch.push('<span class="chip">núcleo</span>');
+    if (f.nuevo) ch.push('<span class="chip z">nuevo</span>');
+    if (f.enPrueba) ch.push('<span class="chip a">' + ico('alerta') + 'en prueba</span>');
+    if (f.tuya) ch.push('<span class="chip o">' + (f.deVacio ? 'elegido por ti' : 'cambiado por ti') + '</span>');
+    seguridad(cid, f.ejercicio).filter(function (s) { return s.n === 'r'; }).forEach(function (s) { ch.push(chipSeg(s)); });       // no debería salir nunca: si sale, la propuesta es anterior a un cambio tuyo
+    det.push('<div class="sub">' + esc(f.explicacion || '') + '</div>');
+    if (f.original) det.push('<div class="sub">Carena proponía: ' + esc(f.original) + '</div>');
+    if (f.consigna) det.push('<div class="sub"><b>Consigna:</b> ' + esc(f.consigna) + '</div>');
+    if (f.reglas && f.reglas.length) det.push('<div class="sub">Reglas: ' + esc(f.reglas.join(' · ')) + '</div>');
+    if (f.seccion === 'principal') {
+      var ops = [], acc = [];
+      if (f.quitada) acc.push('<button class="btn mini" onclick="App.propEd(\'' + pid + '\',\'' + h + '\',\'\')">' + ico('deshacer') + 'Volver a ponerlo</button>');
+      else {
+        if (!f.tuya) (f.opciones || []).forEach(function (o) {
+          if (p.filas.some(function (x) { return x !== f && !x.quitada && x.ejercicio === o.ejercicio; })) return;
+          var tope = o.sinProbar && p.filas.some(function (x) { return x !== f && x.enPrueba && !x.quitada; });
+          ops.push('<button class="btn mini"' + (tope ? ' disabled title="Ya hay uno en prueba en esta sesión"' : '') + ' onclick="App.propEd(\'' + pid + '\',\'' + h + '\',\'' + o.ejercicio + '\')">' + esc(o.nombre) + ' <span class="sub">· ' + esc([o.dosis, o.carga].filter(Boolean).join(' · ')) +
+            (o.sinProbar ? ' · sin probar: entraría en prueba' : o.veces ? ' · ' + o.veces + (o.veces === 1 ? ' vez' : ' veces') : ' · nuevo') + '</span></button>');
+        });
+        if (f.tuya) acc.push('<button class="btn mini" onclick="App.propEd(\'' + pid + '\',\'' + h + '\',\'\')">' + ico('deshacer') + (f.deVacio ? 'Dejar el hueco vacío' : 'Volver a lo propuesto') + '</button>');
+        if (!f.deVacio) acc.push('<button class="btn mini" onclick="App.propEd(\'' + pid + '\',\'' + h + '\',\'quitar\')">' + ico('x') + 'Quitar de la sesión</button>');
+      }
+      if (ops.length) det.push('<div class="sub" style="margin-top:6px">Cambiar por (ya pasan su filtro de seguridad):</div><div class="acciones" style="margin:4px 0 0">' + ops.join('') + '</div>');
+      if (acc.length) det.push('<div class="acciones" style="margin:6px 0 0">' + acc.join('') + '</div>');
+    }
+    return '<details class="fp' + (f.quitada ? ' q' : '') + '"><summary><span class="num">' + (f.seccion === 'principal' ? esc(String(f.hueco)) : '') + '</span><span><span class="nom">' + esc(f.nombre) + '</span>' +
+      (f.seccion === 'principal' && f.etiqueta ? ' <span class="sub">' + esc(f.etiqueta) + '</span>' : '') + (ch.length ? '<span class="chips" style="margin-top:3px">' + ch.join('') + '</span>' : '') + '</span><span class="dz">' + esc(dosisProp(f)) + '</span></summary><div class="det">' + det.join('') + '</div></details>';
+  }
+  function htmlProp(cid, dia, varios) {
+    var p = propLista(cid, dia), c = I.C[cid] || {}, cab = '<div class="nombre">' + esc(c.nombre || cid) + ' <span class="sub">' + esc(cid) + '</span></div>';
+    if (!p) return '<div class="card">' + cab + '<div class="sub">Sin propuesta para este día.</div><div class="acciones"><button class="btn mini" onclick="App.pedirProp(\'' + cid + '\',\'' + dia + '\')">Pedirla ahora</button></div></div>';
+    if (p.estado !== 'ok') return '<div class="card">' + cab + '<div class="nota r">' + ico('stop') + ' Carena no propone sesión a este cliente:<br>' + (p.bloqueos || []).map(function (b) { return '· ' + esc(b.texto); }).join('<br>') + '</div>' +
+      '<div class="sub" style="margin-top:8px">Con una duda de seguridad abierta no se propone nada: se resuelve en su pantalla de Seguridad y la propuesta se rehace sola.</div>' +
+      '<div class="acciones"><button class="btn mini" onclick="App.propSeguridad(\'' + cid + '\')">' + ico('escudo') + 'Ir a Seguridad</button><button class="btn mini" onclick="App.pedirProp(\'' + cid + '\',\'' + dia + '\')">Volver a calcular</button></div></div>';
+    var m = p.minutos || {}, h = '<div class="card">' + cab;
+    h += '<div class="kpi"><div>' + (p.enfoque ? 'Enfoque' : 'Día') + '<b>' + esc(p.enfoque ? nombreEnfoque(p.enfoque) : p.dia) + '</b></div><div>Fase<b>' + esc(p.fase) + '</b></div>' + (p.bloque ? '<div>Bloque<b>' + p.bloque + ' · ' + p.sesionBloque + '/8</b></div>' : '') +
+      '<div>Rondas<b>' + p.rondas + '</b></div><div>RPE objetivo<b>≤ ' + fmtNum(p.rpeObjetivo) + '</b></div><div>Tiempo<b>' + (m.total ? '~' + m.total + ' min' : '—') + '</b></div></div>';
+    h += '<div class="chips">' + (p.sombra ? '<span class="chip">En sombra: sigue planificando v4</span>' : '<span class="chip v">Planifica Carena</span>') + (p.motivoFase ? '<span class="chip a">' + esc(p.motivoFase) + '</span>' : '') +
+      (m.total ? '<span class="chip">calentamiento ' + m.calentamiento + ' + principal ' + m.principal + ' + vuelta ' + m.vuelta + ' min' + (m.visita ? ' · visita de ' + m.visita : '') + '</span>' : '') + '</div>';
+    var enf = PLN().enfoques || [];
+    if (enf.length) h += '<div class="campo"><label for="enf-' + cid + '">Hoy toca</label><select id="enf-' + cid + '" onchange="App.propEnfoque(\'' + cid + '\',\'' + dia + '\',this.value)">' +
+      opts([['', 'Lo que toca: día ' + (p.dia || 'A/B')]].concat(enf.map(function (e) { return [e.id, 'Enfoque: ' + e.nombre]; })), p.enfoque || '') + '</select></div>';
+    var av = (p.avisos || []).map(function (a) { return a.texto; }).concat(p.avisosValidador || []);
+    if (av.length) h += '<div class="nota a">' + av.map(function (t) { return '· ' + esc(t); }).join('<br>') + '</div>';
+    var pq = p.preguntas || [];
+    if (pq.length) h += '<div class="sec-prop">Preguntas · nada sube ni baja sin tu respuesta</div>' + pq.map(function (q) { return htmlPregPlan(cid, q); }).join('');
+    ['calentamiento', 'principal', 'vuelta a la calma'].forEach(function (sec) {
+      var fs = p.filas.filter(function (f) { return f.seccion === sec; }); if (!fs.length && sec !== 'principal') return;
+      h += '<div class="sec-prop">' + sec + (sec === 'principal' ? ' · ' + (p.formato || '') : '') + '</div>' + fs.map(function (f) { return htmlFilaProp(cid, p, f); }).join('');
+      if (sec === 'principal') (p.vacios || []).forEach(function (v) {
+        if (v.cubierto) return;
+        var ops = (v.opciones || []).filter(function (o) { return !p.filas.some(function (x) { return !x.quitada && x.ejercicio === o.ejercicio; }); });
+        h += '<div class="fp vac"><div><span class="chip a">Hueco ' + esc(String(v.hueco)) + ' vacío</span> <b>' + esc(v.etiqueta) + '</b><div class="sub">' + esc(v.motivo) + '</div>' +
+          (ops.length ? '<div class="sub" style="margin-top:6px">Sin probar que puedes elegir tú (entraría en prueba' + (p.hayPrueba ? '; hoy ya hay uno' : '') + '):</div><div class="acciones" style="margin:4px 0 0">' + ops.map(function (o) {
+            return '<button class="btn mini"' + (p.hayPrueba ? ' disabled' : '') + ' onclick="App.propEd(\'' + p.id + '\',\'' + v.hueco + '\',\'' + o.ejercicio + '\')">' + esc(o.nombre) + ' <span class="sub">· ' + esc([o.dosis, o.carga].filter(Boolean).join(' · ')) + (o.veces ? ' · ' + o.veces + ' veces' : '') + '</span></button>'; }).join('') + '</div>' : '') + '</div></div>';
+      });
+    });
+    h += '<div class="sub" style="margin-top:10px">Motor ' + esc(p.motor || '') + ' · reglas ' + esc(String(p.conocimiento || '').slice(0, 8)) + ' · calculada el ' + esc(String(p.creada || '').replace('T', ' a las ').slice(0, 22)) + ' · validador: ' + esc(p.validacion || '') + '</div>';
+    return h + '</div>';
+  }
+  function pintarProp() {
+    var vp = S.vp; if (!vp) return;
+    var mo = document.querySelector('#capa .modal'), sc = mo ? mo.scrollTop : 0, abiertos = {};
+    [].forEach.call(document.querySelectorAll('#capa details.fp[open]'), function (d) { abiertos[d.getAttribute('data-k')] = 1; });
+    var ok = vp.lista.filter(function (cid) { var p = propDe(cid, vp.dia); return p && p.estado === 'ok'; }), hecha = vp.lista.every(function (cid) { return registradaHoy(cid, vp.dia); });
+    var sombra = ok.some(function (cid) { return !conCarena(cid); });
+    var h = '<h3 style="display:flex;gap:8px;align-items:center">' + ico('lista', 'g') + 'Propuesta de Carena</h3><div class="sub">' + esc(fechaLarga(vp.dia)) + ' · toca un ejercicio para ver por qué está, cambiarlo o quitarlo</div>' +
+      vp.lista.map(function (cid) { return htmlProp(cid, vp.dia, vp.lista.length > 1); }).join('') +
+      (ok.length && !hecha && sombra ? '<div class="nota n">Estos clientes siguen con v4. Si empiezas con la propuesta de Carena, la sesión se registra en Carena pero <b>no se escribe en su ficha de v4</b> (v4 no la contará).</div>' : '') +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarProp()">Cerrar</button>' + (ok.length && !hecha ? '<button class="btn pri" onclick="App.empezarCarena()">Empezar con esta propuesta</button>' : '') + '</div>';
+    modal(h);
+    [].forEach.call(document.querySelectorAll('#capa details.fp'), function (d, i) { d.setAttribute('data-k', i); });
+    Object.keys(abiertos).forEach(function (k) { var d = document.querySelector('#capa details.fp[data-k="' + k + '"]'); if (d) d.open = true; });
+    mo = document.querySelector('#capa .modal'); if (mo && sc) mo.scrollTop = sc;
+  }
+  function propEd(pid, hueco, que) { editar(pid, hueco, que === 'quitar' ? { quitar: true } : que ? { op: que } : null); pintarProp(); }
+  function propSeguridad(cid) { S.vp = null; cerrarModal(); ir('seguridad', cid); }
+  function empezarCarena() { var vp = S.vp; if (!vp) return; S.vp = null; cerrarModal(); S.dia = vp.dia; empezarOSeguir(vp.lista.join(','), 'carena'); }
+  /** Respuesta a una pregunta del planificador. Con techo clínico, el «no» exige motivo. */
+  function plResp(cid, qid, r) {
+    var p = PLN().propuestas[cid], q = p ? (p.preguntas || []).filter(function (x) { return x.id === qid; })[0] : null; if (!q || q.respuesta) return;
+    var manda = function (motivo) {
+      hacer('responder', { pregunta: qid, cliente: cid, respuesta: r, motivo: motivo || '' });
+      if (S.vp) pintarProp(); else pintar();
+      toast(r === 'sí' ? (q.tipo === 'revisar techo' ? 'Apuntado · revisa su techo en Seguridad' : q.tipo === 'mantener aquí' ? 'Se mantiene: no te lo vuelvo a proponer' : 'Aplicado a la propuesta') : q.tipo === 'subir' ? 'No sube · no te lo pregunto en 14 días' : 'Apuntado');
+    };
+    if (r === 'no' && q.motivoObligatorio) { var vp = S.vp; pedirTexto('No bajar con techo clínico', 'El techo de RPE de ' + nombreCorto(cid) + ' es clínico y la última sesión lo pasó. Escribe por qué no se baja (queda un aviso en Pendientes).', '', true, function (m) { S.vp = vp; manda(m); }); return; }
+    manda('');
+  }
+  /** Pide al servidor la propuesta al momento (con conexión): para otro enfoque, para volver a calcular o para una sesión sin cita. */
+  function pedirProp(lista, dia, enfoque, luego) {
+    var ids = lista.split(','), cid = ids[0];
+    if (!enLinea()) { toast('Sin conexión: la propuesta se calcula en Carena'); return; }
+    toast('Calculando la propuesta…');
+    google.script.run.withSuccessHandler(function (res) {
+      var pl = S.snap.planificador = S.snap.planificador && S.snap.planificador.propuestas ? S.snap.planificador : { propuestas: {}, enfoques: [], hallazgos: {} };
+      Object.keys(res || {}).forEach(function (c) { pl.propuestas[c] = res[c]; });
+      guardar(K.snap, S.snap);
+      if (luego) luego(res); else if (S.vp) pintarProp(); else pintar();
+    }).withFailureHandler(function (err) { toast('No se pudo calcular: ' + String(err && err.message || err)); if (S.vp) pintarProp(); })
+      .apiPropuesta({ cliente: cid, fecha: dia, enfoque: enfoque || '', solo: ids.length === 1 && !!(I.C[cid] || {}).pareja && !(S.vp && S.vp.lista.length > 1) });
+  }
+  function propEnfoque(cid, dia, enfoque) { pedirProp(S.vp ? S.vp.lista.join(',') : cid, dia, enfoque); }
+  /** En una sesión vacía (sin cita o sin plan): pedir la propuesta y cargarla. */
+  function propEnSesion() {
+    var r = S.reg; if (!r) return;
+    pedirProp(r.clientes.join(','), r.dia, '', function () {
+      var n = 0;
+      r.clientes.forEach(function (cid) { var p = r.por[cid]; if (p.filas.length) return; var x = desdePropuesta(cid, r.dia, p.sesion); if (x) { p.filas = x.filas; p.formato = x.formato; p.dia = x.dia; p.plan = x.plan; p.carena = true; n++; } });
+      guardarReg(); pintarSesion();
+      toast(n ? 'Propuesta cargada' : 'Carena no propone sesión: mira su Seguridad');
+    });
+  }
+  /** Las filas de la sesión a partir de la propuesta (con lo aceptado y lo cambiado por ti). Lo que quitaste entra como «quitada», para que quede constancia. */
+  function desdePropuesta(cid, dia, sid) {
+    var p = propLista(cid, dia); if (!p || p.estado !== 'ok') return null;
+    var filas = p.filas.map(function (f, k) {
+      var x = filaDesde({ id: 'F-' + sid + '-P' + dos(k + 1), ejercicio: f.ejercicio, texto: f.nombre, bloque: f.seccion, orden: k + 1, dosis: f.dosis, carga: f.carga, kg: f.kg === null || f.kg === undefined ? '' : f.kg, color: f.color || '', rondas: f.rondas || '' }, true);
+      x.estado = f.quitada ? 'quitada' : 'prescrita'; x.prop = f.deVacio ? '' : p.id + '-' + dos(f.n); x.carena = true; x.hueco = f.hueco; x.elegido = !!f.elegido; x.consigna = f.consigna || ''; x.porque = f.explicacion || '';
+      return x;
+    });
+    return { filas: filas, formato: p.formato || 'circuito', dia: p.enfoque ? '' : p.dia, enfoque: p.enfoque || '',
+             plan: { dia: p.enfoque || p.dia, bloque: p.bloque, sesionBloque: p.sesionBloque, propuesta: p.id, fase: p.fase, sombra: !!p.sombra, rpeObjetivo: p.rpeObjetivo } };
+  }
+  // Preguntas del planificador para las visitas de hoy de quien ya planifica Carena (cuentan en Pendientes)
+  function preguntasPlanHoy() {
+    var hoy = hoyIso(), out = [];
+    visitasDe(hoy).forEach(function (vi) { vi.clientes.forEach(function (cid) { if (!conCarena(cid) || registradaHoy(cid, hoy)) return; var p = propDe(cid, hoy); abiertas(p && p.estado === 'ok' ? p : null).forEach(function (q) { out.push({ cid: cid, q: q }); }); }); });
+    return out;
+  }
+  // ---------- Hallazgos: lo que haces con un cliente y Carena no puede proponer ----------
+  function hallazgosDe(cid) { return (PLN().hallazgos || {})[cid] || null; }
+  function tolerarDe(cid) { var h = hallazgosDe(cid); return ((h && h.tolerar) || []).filter(function (x) { var t = I.tol[cid + '|' + x.ej]; return I.E[x.ej] && !(t && (t.estado === 'tolerado' || /^descartado/.test(t.estado) || t.estado === 'revisar')); }); }
+  function abrirTolerar(cid) {
+    var l = tolerarDe(cid); if (!l.length) { toast('Nada que revisar'); return; }
+    modal('<h3 style="display:flex;gap:8px;align-items:center">' + ico('candado', 'g') + 'Tolerado por histórico · ' + esc(nombreCorto(cid)) + '</h3>' +
+      '<div class="sub">Ejercicios que sus condiciones vigilan, que no tienen prueba registrada y que ha hecho 3 veces o más en los últimos 120 días sin molestias de más de 3. Mientras sigan «sin probar», Carena no los propone. Pasarlos a «tolerado» es relajar: decide uno a uno.</div>' +
+      '<div class="lista-ej" style="max-height:38vh;margin-top:10px">' + l.map(function (x) {
+        return '<div class="item"><label style="display:flex;gap:10px;align-items:center;flex:1;min-width:0"><input type="checkbox" data-th="' + x.ej + '" checked onchange="App.tolerarListo()" style="width:22px;height:22px;flex:none"><span><b>' + esc(nombreEj(x.ej)) + '</b><br><span class="sub">' + x.veces + ' veces · última ' + fechaCorta(x.ultima) + (x.vigila ? ' · lo vigila: ' + esc(x.vigila) : '') + '</span></span></label></div>';
+      }).join('') + '</div>' +
+      '<div class="campo"><label>Motivo (obligatorio, vale para todos los marcados)</label><textarea id="th-motivo" oninput="App.tolerarListo()" placeholder="Por qué es seguro darlos por tolerados: lo que has visto en las sesiones…"></textarea></div>' +
+      '<label class="casilla" style="margin-top:12px"><input type="checkbox" id="th-ok" onchange="App.tolerarListo()"><span>Confirmo que relajo la vigilancia de los ejercicios marcados y que el motivo lo justifica.</span></label>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" id="th-guardar" disabled onclick="App.guardarTolerar(\'' + cid + '\')">Pasar a tolerado</button></div>');
+  }
+  function tolerarListo() { var b = $('th-guardar'), n = document.querySelectorAll('[data-th]:checked').length; if (b) { b.disabled = !(n && val('th-motivo').length >= 4 && $('th-ok').checked); b.textContent = 'Pasar a tolerado' + (n ? ' (' + n + ')' : ''); } }
+  function guardarTolerar(cid) {
+    var m = val('th-motivo'), ids = [].map.call(document.querySelectorAll('[data-th]:checked'), function (x) { return x.getAttribute('data-th'); }), por = {};
+    if (!ids.length || m.length < 4 || !$('th-ok').checked) return;
+    tolerarDe(cid).forEach(function (x) { por[x.ej] = x; });
+    var cambios = ids.map(function (ej) {
+      var t = I.tol[cid + '|' + ej], x = por[ej] || {}, nota = 'Tolerado por histórico: ' + (x.veces || '?') + ' veces en 120 días sin molestias de más de 3';
+      return t && t.id && !t.local ? { tabla: 'Tolerancia', id: t.id, cliente: cid, campos: { 'Estado': 'tolerado', 'Notas': [t.notas, nota].filter(Boolean).join(' · ') } }
+                                   : { tabla: 'Tolerancia', id: '', cliente: cid, campos: { 'Ejercicio': ej, 'Estado': 'tolerado', 'Condición': x.vigila || '', 'Notas': nota } };
+    });
+    hacer('seguridad', { cambios: cambios, motivo: m, confirmado: true }); cerrarModal(); pintar(); toast(ids.length + (ids.length === 1 ? ' ejercicio pasa' : ' ejercicios pasan') + ' a tolerado · Carena rehace sus propuestas');
+  }
+  /** Bloque «Planificación» de la ficha del cliente: quién planifica, datos que usa el motor y lo que el motor no puede proponer. */
+  function htmlPlanCliente(cid) {
+    var c = I.C[cid] || {}, h = hallazgosDe(cid), tl = tolerarDe(cid), hoy = hoyIso(), p = PLN().propuestas[cid], out = '';
+    out += '<h2>' + ico('lista') + 'Planificación</h2><div class="card"><div class="kpi"><div>Planifica<b>' + (conCarena(cid) ? 'Carena' : 'v4') + '</b></div><div>Objetivo<b>' + esc(c.objetivo || '—') + '</b></div><div>Suelo<b>' + esc(c.suelo || 'no') + '</b></div>' +
+      '<div>Visita<b>' + (num(c.duracion) ? num(c.duracion) + ' min' : '—') + '</b></div><div>Ancla<b style="font-size:14px">' + esc(c.ancla ? nombreEj(c.ancla) : '—') + '</b></div></div>' +
+      (c.materialCasa ? '<div class="sub" style="margin-top:8px">Material en casa: ' + esc(c.materialCasa) + '</div>' : '') +
+      (!num(c.duracion) ? '<div class="nota n">Sin la duración de la visita, Carena no ajusta el número de ejercicios ni las rondas al tiempo.</div>' : '') +
+      (p && p.fecha >= hoy ? (p.estado === 'ok' ? '<div class="sub" style="margin-top:8px">Próxima propuesta: ' + fechaCorta(p.fecha) + ' · ' + esc(tituloProp(p)) + ' · ' + esc(p.fase) + '</div>'
+        : '<div class="nota ' + (conCarena(cid) ? 'r' : 'a') + '">' + ico('stop') + ' Carena no le propone sesión: ' + esc(((p.bloqueos || [])[0] || {}).texto || '') + '</div>') : '') +
+      (h && h.bloqueos && h.bloqueos.length && !(p && p.estado !== 'ok') ? '<div class="nota a">' + ico('alerta') + ' Hoy Carena no podría proponerle sesión: ' + esc(h.bloqueos[0]) + '</div>' : '') +
+      '<div class="acciones"><button class="btn mini" onclick="App.editarPlan(\'' + cid + '\')">' + ico('lapiz') + 'Cambiar</button>' + (p && p.fecha >= hoy ? '<button class="btn mini" onclick="App.verProp(\'' + cid + '\',\'' + p.fecha + '\')">' + ico('lista') + 'Ver propuesta</button>' : '') + '</div></div>';
+    var reglas = h && h.reglas ? Object.keys(h.reglas) : [];
+    if (tl.length || reglas.length) {
+      var N = { 'F-PIA': 'Presión intraabdominal por encima de su límite', 'F-VIGILANCIA': 'Vigilado por una condición', 'F-MATERIAL': 'Material que no está en el kit ni en su casa', 'F-NIVEL': 'Nivel por encima del suyo', 'F-SUELO': 'Es de suelo y no puede ir al suelo',
+                'F-ACTIVO': 'Ejercicio archivado o en borrador', 'F-LIMITE': 'Pasa un límite suyo', 'F-ABSOLUTA': 'Contraindicado por una condición' };
+      out += '<details class="card"><summary><b>Lo que hace contigo y Carena no puede proponer</b> <span class="chip a">' + (tl.length + reglas.reduce(function (n, r) { return n + h.reglas[r].length; }, 0)) + '</span></summary>' +
+        '<div class="sub" style="margin-top:6px">Ejercicios que ha hecho 3 veces o más en los últimos 120 días y que hoy no pasan el filtro del planificador. No es un error: es donde tus datos de seguridad y tu práctica no dicen lo mismo, y hay que decidir cuál manda.</div>' +
+        (tl.length ? '<div class="preg"><div><b>Sin probar, hechos sin molestias · ' + tl.length + '</b><div class="sub">' + esc(tl.slice(0, 4).map(function (x) { return nombreEj(x.ej); }).join(', ')) + (tl.length > 4 ? '…' : '') + '</div></div><button class="btn mini" onclick="App.abrirTolerar(\'' + cid + '\')">' + ico('candado') + 'Revisar</button></div>' : '') +
+        reglas.map(function (r) { return '<div class="preg" style="display:block"><b>' + esc(N[r] || r) + ' · ' + h.reglas[r].length + '</b> <span class="sub">' + esc(r) + '</span>' + h.reglas[r].map(function (x) { return '<div class="sub">· ' + esc(nombreEj(x.ej)) + ' (' + x.veces + ' veces): ' + esc(x.por) + '</div>'; }).join('') + '</div>'; }).join('') + '</details>';
+    }
+    return out;
+  }
+  function editarPlan(cid) {
+    var c = I.C[cid] || {}, ejs = S.snap.ejercicios.filter(function (e) { return e.estado !== 'archivado' && !e.local; });
+    modal('<h3>Planificación de ' + esc(nombreCorto(cid)) + '</h3><div class="rejilla">' +
+      '<div class="campo"><label>Quién planifica</label><select id="p-plan" onchange="App.planListo(\'' + cid + '\')">' + opts([['v4', 'v4 (Carena propone en sombra)'], ['Carena', 'Carena']], conCarena(cid) ? 'Carena' : 'v4') + '</select></div>' +
+      '<div class="campo"><label>Objetivo</label><select id="p-obj">' + opts([['progresar', 'Progresar'], ['mantener', 'Mantener (no se le propone subir)']], c.objetivo, '—') + '</select></div>' +
+      '<div class="campo"><label>Puede ir al suelo</label><select id="p-suelo" onchange="App.planListo(\'' + cid + '\')">' + opts([['sí', 'Sí'], ['con ayuda', 'Con ayuda (solo en el enfoque de levantarse)'], ['no', 'No']], c.suelo, 'Sin decidir (cuenta como no)') + '</select></div>' +
+      '<div class="campo"><label>Duración de la visita (min)</label><input type="text" inputmode="numeric" id="p-dur" value="' + esc(num(c.duracion) || '') + '" placeholder="60"></div></div>' +
+      '<div class="campo"><label>Ejercicio ancla (se repite siempre; vacío = ninguno)</label><input type="text" id="p-ancla" list="p-ejs" value="' + esc(c.ancla ? nombreEj(c.ancla) : '') + '" autocomplete="off" placeholder="Escribe para buscar"><datalist id="p-ejs">' + ejs.map(function (e) { return '<option value="' + esc(e.nombre) + '">'; }).join('') + '</datalist></div>' +
+      '<div class="campo"><label>Material en casa (lo que tiene y se puede usar)</label><input type="text" id="p-mat" value="' + esc(c.materialCasa || '') + '" placeholder="silla firme, bicicleta estática, pelota…"></div>' +
+      '<div id="p-extra"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" onclick="App.guardarPlan(\'' + cid + '\')">Guardar</button></div>');
+    planListo(cid);
+  }
+  function planListo(cid) {
+    var c = I.C[cid] || {}, el = $('p-extra'), h = ''; if (!el) return;
+    var m0 = $('p-motivo') ? val('p-motivo') : '', ok0 = $('p-ok') ? $('p-ok').checked : false;
+    if (RANGO_SUELO[val('p-suelo')] > RANGO_SUELO[c.suelo || '']) h += '<div class="nota a">' + ico('candado') + ' Darle más permiso para ir al suelo es relajar: pide motivo y confirmación.</div><div class="campo"><label>Motivo (obligatorio)</label><textarea id="p-motivo" placeholder="Por qué puede ahora: lo has visto bajar y subir, informe…">' + esc(m0) + '</textarea></div>' +
+      '<label class="casilla" style="margin-top:10px"><input type="checkbox" id="p-ok"' + (ok0 ? ' checked' : '') + '><span>Confirmo que le doy más permiso para ir al suelo.</span></label>';
+    if (val('p-plan') === 'Carena' && !conCarena(cid)) {
+      var p = PLN().propuestas[cid], hz = hallazgosDe(cid), bl = p && p.estado !== 'ok' ? ((p.bloqueos || [])[0] || {}).texto : hz && hz.bloqueos && hz.bloqueos[0];
+      h += '<div class="nota n">Con Carena, «Empezar» abre su propuesta y la sesión se registra solo en Carena: <b>deja de escribirse en la ficha de v4</b>. Puedes volver a v4 cuando quieras.</div>' +
+        (bl ? '<div class="nota r">' + ico('stop') + ' Ahora mismo Carena no le propone sesión: ' + esc(bl) + '</div>' : '');
+    }
+    el.innerHTML = h;
+  }
+  function guardarPlan(cid) {
+    var c = I.C[cid] || {}, an = val('p-ancla'), ancla = '';
+    if (an) { var e = S.snap.ejercicios.filter(function (x) { return norm(x.nombre) === norm(an) && x.estado !== 'archivado' && !x.local; })[0]; if (!e) { toast('No encuentro ese ejercicio: elígelo de la lista'); return; } ancla = e.id; }
+    var dur = val('p-dur'); if (dur && !(num(dur) >= 20 && num(dur) <= 120)) { toast('La duración va de 20 a 120 minutos'); return; }
+    var nuevo = { 'Planifica': val('p-plan'), 'Objetivo': val('p-obj'), 'Puede ir al suelo': val('p-suelo'), 'Duración de la visita (min)': dur ? num(dur) : '', 'Ejercicio ancla': ancla, 'Material en casa': val('p-mat') }, campos = {};
+    Object.keys(nuevo).forEach(function (k) { var a = c[CAMPOS_PLAN[k]]; if (k === 'Planifica') a = conCarena(cid) ? 'Carena' : 'v4'; if (String(a === undefined || a === null ? '' : a) !== String(nuevo[k])) campos[k] = nuevo[k]; });
+    if (!Object.keys(campos).length) { cerrarModal(); return; }
+    var relaja = 'Puede ir al suelo' in campos && RANGO_SUELO[campos['Puede ir al suelo']] > RANGO_SUELO[c.suelo || ''], d = { cliente: cid, campos: campos };
+    if (relaja) { if (val('p-motivo').length < 4 || !$('p-ok').checked) { toast('Falta el motivo y la confirmación del suelo'); return; } d.motivo = val('p-motivo'); d.confirmado = true; }
+    hacer('planificador', d); cerrarModal(); pintar(); toast('Guardado · Carena rehace su propuesta en un par de minutos');
   }
 
   // ---------- Hoy ----------
@@ -991,7 +1329,7 @@ var App = (function () {
         var estado = reg ? '<div class="chips"><span class="chip v">' + ico('check') + 'Registrada' + (reg.origen === 'ficha' ? ' en la ficha' : '') + (reg.rpe !== null && reg.rpe !== undefined && reg.rpe !== '' ? ' · RPE ' + fmtNum(reg.rpe) : '') + (reg.guardada ? '' : ' · pendiente de subir') + '</span></div>'
           : e === 'nohecha' ? '<div class="chips"><span class="chip">No se hizo' + (vi.motivo ? ' · ' + esc(vi.motivo) : '') + '</span></div>' : resumenSesion(ses);
         return '<div class="persona"><div class="nombre"><button onclick="App.ir(\'cliente\',\'' + cid + '\')" style="font-weight:600;text-align:left">' + esc(c.nombre || cid) + '</button> <span class="sub">' + esc(cid) + (c.nacimiento ? ' · ' + edad(c.nacimiento) + ' años' : '') + '</span></div>' +
-          estado + (e === 'nohecha' || reg ? '' : chipsCliente(cid, ses)) + '</div>';
+          estado + (e === 'nohecha' || reg ? '' : chipsCliente(cid, ses) + htmlPropLinea(cid, dia, lista)) + '</div>';
       }).join('');
       var marca = e === 'hecha' ? '<span class="est v">' + ico('check') + '</span>' : e === 'nohecha' ? '<span class="est x">No</span>' : e === 'pasada' ? '<span class="est p">Sin registrar</span>'
         : e === 'ahora' ? '<span class="est o">Ahora</span>' : e === 'sig' ? '<span class="est">en ' + enCorto(aMin(vi.inicio) - ahora) + '</span>' : '';
@@ -1050,15 +1388,18 @@ var App = (function () {
              tecnica: '', molestia: '', zona: '', obs: '', motivoCarga: '', motivoDescartado: '' } };
   }
   function nuevoId(cid, dia) { var d = new Date(); return 'S-' + cid + '-APP-' + dia.replace(/-/g, '') + '-' + dos(d.getHours()) + dos(d.getMinutes()) + dos(d.getSeconds()); }
-  function empezar(lista) {
-    var ids = lista.split(','), dia = S.dia || hoyIso();
+  function empezar(lista, origen) {                       // origen: 'carena' = con la propuesta de Carena; sin decir = la de quien planifique a cada cliente
+    var ids = lista.split(','), dia = S.dia || hoyIso(), sinProp = [];
     var reg = { dia: dia, clientes: ids, igual: ids.length === 2, inicio: Date.now(), activo: 0, ultimoToque: Date.now(), por: {} };
     ids.forEach(function (cid) {
-      var ses = sesionDe(cid);
-      if (ses) reg.por[cid] = { sesion: ses.id, nueva: false, formato: ses.formato, dia: ses.dia, filas: ses.filas.map(function (f) { return filaDesde(f); }), rpe: null, motivoRpe: '', notas: '' };
+      var ses = sesionDe(cid), quiere = origen === 'carena' || conCarena(cid), sid = nuevoId(cid, dia), x = quiere ? desdePropuesta(cid, dia, sid) : null;
+      if (quiere && !x) sinProp.push(nombreCorto(cid));
+      if (x) reg.por[cid] = { sesion: sid, nueva: true, carena: true, formato: x.formato, dia: x.dia, enfoque: x.enfoque, plan: x.plan, filas: x.filas, rpe: null, motivoRpe: '', notas: '' };
+      else if (ses) reg.por[cid] = { sesion: ses.id, nueva: false, formato: ses.formato, dia: ses.dia, filas: ses.filas.map(function (f) { return filaDesde(f); }), rpe: null, motivoRpe: '', notas: '' };
       else reg.por[cid] = { sesion: nuevoId(cid, dia), nueva: true, formato: 'circuito', dia: '', filas: [], rpe: null, motivoRpe: '', notas: '' };
     });
     S.reg = reg; guardarReg(); S.vista = 'sesion'; pintar(); window.scrollTo(0, 0); animar('an-ade'); window.scrollTo(0, 0);
+    if (sinProp.length) toast('Carena no tiene propuesta para ' + sinProp.join(' ni ') + ': se abre ' + (ids.some(function (c) { return !reg.por[c].nueva; }) ? 'el plan de v4' : 'vacía'));
   }
   function guardarReg() { if (S.reg) guardar(K.reg, S.reg); else { try { localStorage.removeItem(K.reg); } catch (e) {} memoria[K.reg] = null; } }
   function toque() { var r = S.reg; if (!r) return; var a = Date.now(), d = a - (r.ultimoToque || a); if (d > 0 && d < 20000) r.activo += d; r.ultimoToque = a; }
@@ -1087,8 +1428,8 @@ var App = (function () {
   }
   function quitar(cid, i) {
     toque(); var f = filaDe(cid, i);
-    if (f.nueva) { S.reg.por[cid].filas.splice(i, 1); }
-    else { f.estado = f.estado === 'quitada' ? 'prescrita' : 'quitada'; var g = gemela(cid, f); if (g && !g.f.nueva) g.f.estado = f.estado; }
+    if (f.nueva && !f.carena) { S.reg.por[cid].filas.splice(i, 1); }
+    else { f.estado = f.estado === 'quitada' ? 'prescrita' : 'quitada'; var g = gemela(cid, f); if (g && (!g.f.nueva || g.f.carena)) g.f.estado = f.estado; }
     guardarReg(); pintarSesion();
   }
   function todoComoEstaba() {
@@ -1126,9 +1467,10 @@ var App = (function () {
       var tot = p.filas.filter(function (f) { return f.estado !== 'quitada'; }).length, pct = tot ? Math.min(100, Math.round(100 * hechas(p) / tot)) : 0, ant = S.progAnt[p.sesion] || 0;
       S.progAnt[p.sesion] = pct;
       var cab = '<div class="cab-cli"><div class="nombre"><span>' + esc(c.nombre || cid) + '</span><span class="prog">' + hechas(p) + ' de ' + p.filas.filter(function (f) { return f.estado !== 'quitada'; }).length + '</span></div>' +
-        '<div class="sub">' + (p.dia ? 'Día ' + esc(p.dia) + ' · ' : '') + esc(p.formato || '') + (p.nueva ? ' · sesión nueva' : '') + '</div>' + chipsCliente(cid, null) + avisosCabecera(cid) + '<div class="prog-b" aria-hidden="true"><i class="' + (pct === 100 ? 'lleno' : '') + '" style="--de:' + ant + '%;width:' + pct + '%"></i></div></div>';
+        '<div class="sub">' + (p.carena ? 'Carena · ' : '') + (p.enfoque ? esc(nombreEnfoque(p.enfoque)) + ' · ' : p.dia ? 'Día ' + esc(p.dia) + ' · ' : '') + esc(p.formato || '') +
+        (p.plan ? (p.plan.bloque ? ' · bloque ' + p.plan.bloque + ', sesión ' + p.plan.sesionBloque : '') + (p.plan.fase ? ' · ' + esc(p.plan.fase) : '') + (p.plan.rpeObjetivo !== null && p.plan.rpeObjetivo !== undefined ? ' · RPE objetivo ≤ ' + fmtNum(p.plan.rpeObjetivo) : '') : p.nueva ? ' · sesión nueva' : '') + '</div>' + chipsCliente(cid, null) + avisosCabecera(cid) + '<div class="prog-b" aria-hidden="true"><i class="' + (pct === 100 ? 'lleno' : '') + '" style="--de:' + ant + '%;width:' + pct + '%"></i></div></div>';
       var cuerpo = [];
-      if (!p.filas.length) cuerpo.push('<div style="padding:14px" class="sub">Sin ejercicios. ' + (S.snap.sesiones.ultima[cid] ? '<button class="btn mini" onclick="App.repetir(\'' + cid + '\')">Repetir la última (' + fechaCorta(S.snap.sesiones.ultima[cid].fecha) + ')</button> ' : '') + 'o añade uno.</div>');
+      if (!p.filas.length) cuerpo.push('<div style="padding:14px" class="sub">Sin ejercicios. ' + (S.snap.sesiones.ultima[cid] ? '<button class="btn mini" onclick="App.repetir(\'' + cid + '\')">Repetir la última (' + fechaCorta(S.snap.sesiones.ultima[cid].fecha) + ')</button> ' : '') + 'o añade uno. <button class="btn mini" onclick="App.propEnSesion()">' + ico('lista') + 'Pedir propuesta a Carena</button></div>');
       ['calentamiento', 'principal', 'vuelta a la calma'].forEach(function (b) {
         var fs = []; p.filas.forEach(function (f, i) { if (f.bloque === b) fs.push([f, i]); });
         if (!fs.length) return;
@@ -1159,10 +1501,12 @@ var App = (function () {
     seg.forEach(function (s) { extra.push(chipSeg(s)); });
     var m = num(f.val.molestia); if (m) extra.push('<span class="chip ' + (m >= 4 ? 'r' : 'a') + '">Molestia ' + m + '/10' + (f.val.zona ? ' · ' + esc(f.val.zona) : '') + '</span>');
     if (f.val.tecnica && f.val.tecnica !== 'bien') extra.push('<span class="chip a">Técnica ' + esc(f.val.tecnica) + '</span>');
+    if (f.elegido && f.val.ejercicio === f.ejercicio && !I.tol[cid + '|' + f.ejercicio]) extra.push('<span class="chip a">' + ico('alerta') + 'Sin probar: hoy entra en prueba</span>');
     if (seg.some(function (s) { return s.n === 'r'; }) && e && e.alternativas) extra.push('<span class="chip">Alternativa: ' + esc(e.alternativas) + '</span>');
     return '<div class="ej ' + cls + (S.pulso && (S.pulso.todo ? f.estado === 'hecha' : S.pulso[cid + '|' + i]) ? ' pulso' : '') + '"><button class="marca" onclick="App.marcar(\'' + cid + '\',' + i + ')" aria-label="Marcar hecho">' + ico('check') + '</button>' +
       '<button style="text-align:left" onclick="App.marcar(\'' + cid + '\',' + i + ')"><div class="n">' + esc(nombre) + etiqueta + '</div><div class="d">' + descFila(f) +
       (hi ? ' · <span>última: ' + esc([hi.dosis, hi.carga].filter(Boolean).join(' · ') || '—') + ' (' + fechaCorta(hi.ultima) + ')</span>' : ' · <span>primera vez</span>') + '</div>' +
+      (f.consigna && f.val.ejercicio === f.ejercicio ? '<div class="consigna">' + esc(f.consigna) + '</div>' : '') +
       (extra.length ? '<div class="chips">' + extra.join('') + '</div>' : '') + '</button>' +
       '<div class="acc">' + (e && e.video ? '<button class="icono" onclick="App.verVideo(\'' + e.id + '\')" aria-label="Ver el vídeo">' + ico('play') + '</button>' : '') + '<button class="icono" onclick="App.cambiar(\'' + cid + '\',' + i + ')" aria-label="Cambiar">' + ico('lapiz') + '</button><button class="icono" onclick="App.quitar(\'' + cid + '\',' + i + ')" aria-label="Quitar">' + ico(f.estado === 'quitada' ? 'deshacer' : 'x') + '</button></div></div>';
   }
@@ -1325,6 +1669,9 @@ var App = (function () {
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return '<button class="op' + (t !== null && n > t ? ' r' : '') + (num(p.rpe) === n ? ' on' : '') + '" onclick="App.setRpe(\'' + cid + '\',' + n + ',this)">' + n + '</button>'; }).join('') +
         '<button class="op' + (num(p.rpe) !== null && num(p.rpe) % 1 ? ' on' : '') + '" onclick="App.medio(\'' + cid + '\',this)">+½</button></div><div id="rpe-' + cid + '" class="sub" style="margin-top:6px">' + (num(p.rpe) !== null ? 'RPE ' + fmtNum(p.rpe) : 'Sin RPE') + '</div><div id="motivo-rpe-' + cid + '"></div></div>' +
         (prueba.length ? '<div class="nota a">' + ico('sol') + ' Mañana pregunta por: ' + esc(prueba.join(', ')) + '</div>' : '') +
+        (p.plan ? '<div class="campo"><label>¿Qué tal ha salido la sesión que propuso Carena? (0 a 10, opcional)</label><div class="opciones">' +
+          [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return '<button class="op' + (p.notaJ === n ? ' on' : '') + '" onclick="App.setNotaJ(\'' + cid + '\',' + n + ',this)">' + n + '</button>'; }).join('') + '</div>' +
+          '<div class="opciones" style="margin-top:8px">' + ETQ_SESION.map(function (e, k) { return '<button class="op' + ((p.etq || []).indexOf(e) >= 0 ? ' on' : '') + '" onclick="App.setEtq(\'' + cid + '\',' + k + ',this)">' + esc(e) + '</button>'; }).join('') + '</div></div>' : '') +
         '<div class="campo"><label>Nota (opcional)</label><textarea oninput="App.setNota(\'' + cid + '\',this.value)">' + esc(p.notas) + '</textarea></div></div>';
     });
     h += '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Volver</button><button class="btn pri" onclick="App.guardarCierre()">Guardar y cerrar</button></div>';
@@ -1337,6 +1684,8 @@ var App = (function () {
     el.innerHTML = t !== null && num(p.rpe) !== null && num(p.rpe) > t ? '<div class="nota r">' + ico('stop') + ' Pasa su techo de RPE ' + fmtNum(t) + '. Se guarda tal cual, con motivo:</div><input type="text" value="' + esc(p.motivoRpe) + '" placeholder="Motivo" oninput="App.setMotivoRpe(\'' + cid + '\',this.value)" style="margin-top:6px">' : '';
   }
   function setNota(cid, t) { S.reg.por[cid].notas = t; guardarReg(); }
+  function setNotaJ(cid, n, btn) { var p = S.reg.por[cid], quita = p.notaJ === n; p.notaJ = quita ? null : n; [].forEach.call(btn.parentNode.querySelectorAll('.op'), function (b) { b.classList.remove('on'); }); if (!quita) btn.classList.add('on'); guardarReg(); }
+  function setEtq(cid, k, btn) { var p = S.reg.por[cid], e = ETQ_SESION[k], i; p.etq = p.etq || []; i = p.etq.indexOf(e); if (i >= 0) p.etq.splice(i, 1); else p.etq.push(e); btn.classList.toggle('on', i < 0); guardarReg(); }
   function setMotivoRpe(cid, t) { S.reg.por[cid].motivoRpe = t; guardarReg(); }
   function guardarCierre() {
     var r = S.reg;
@@ -1351,6 +1700,7 @@ var App = (function () {
       encolar({ id: uid('OP'), tipo: 'cerrarSesion', creado: fin, datos: datos });
       var h = leer(K.hechas, {}); h[p.sesion] = { cliente: cid, fecha: r.dia, rpe: p.rpe, guardada: false, id: p.sesion }; guardar(K.hechas, h); I.hechas = h;
       if (S.snap.sesiones.plan[cid] && S.snap.sesiones.plan[cid].id === p.sesion) delete S.snap.sesiones.plan[cid];
+      if (p.plan && S.snap.planificador && S.snap.planificador.propuestas[cid] && S.snap.planificador.propuestas[cid].id === p.plan.propuesta) delete S.snap.planificador.propuestas[cid];
     });
     guardar(K.snap, S.snap);
     var seg = Math.round(r.activo / 1000);
@@ -1361,7 +1711,7 @@ var App = (function () {
     var r = S.reg, avisos = [], filas = [];
     p.filas.forEach(function (f) {
       var v = f.val, pr = f.pres, hecha = f.estado !== 'quitada' && f.estado !== 'prescrita';
-      if (f.nueva && !hecha) return;
+      if (f.nueva && !hecha && !f.carena) return;            // lo propuesto por Carena y no hecho se guarda como «quitada»: de ahí aprende
       var rondas = v.rondas !== '' && v.rondas !== null && v.rondas !== undefined ? Number(v.rondas) : num(pr.rondas);
       var igual = f.estado === 'hecha' && !f.nueva;
       var texto = function (n) { if (!hecha || n > (rondas || 0)) return ''; if (igual) return pr['r' + n] || [v.dosis, v.carga].filter(Boolean).join(' · '); return [v.dosis, v.carga].filter(Boolean).join(' · '); };
@@ -1370,7 +1720,8 @@ var App = (function () {
                 r1: texto(1), r2: texto(2), r3: texto(3), tecnica: v.tecnica, molestia: v.molestia, zona: v.zona,
                 obs: [v.obs, v.motivoDescartado ? 'Descartado, hecho: ' + v.motivoDescartado : ''].filter(Boolean).join(' · '),
                 estado: f.estado === 'prescrita' ? 'quitada' : f.estado, motivoCarga: v.motivoCarga,
-                prescripcion: f.nueva ? '' : [pr.rondas ? pr.rondas + '×' : '', pr.dosis, pr.carga].filter(Boolean).join(' ') };
+                prescripcion: f.nueva && !f.carena ? '' : [pr.rondas ? pr.rondas + '×' : '', pr.dosis, pr.carga].filter(Boolean).join(' ') };
+      if (f.carena) { o.propuesta = f.prop || ''; o.hueco = f.hueco === undefined || f.hueco === null ? '' : f.hueco; if (f.elegido && v.ejercicio === f.ejercicio) o.elegido = true; }
       filas.push(o);
       var l = hecha ? pasaCarga(cid, v.ejercicio, num(v.kg)) : null;
       if (l) avisos.push({ tipo: 'carga por encima del límite', fila: f.id, valor: v.carga, limite: fmtNum(l.valor) + ' kg' + (l.tipoCarga ? ' (' + l.tipoCarga + ')' : ''), motivo: v.motivoCarga });
@@ -1378,8 +1729,11 @@ var App = (function () {
     });
     var t = techo(cid);
     if (t !== null && num(p.rpe) !== null && num(p.rpe) > t) avisos.push({ tipo: 'RPE por encima del techo', valor: fmtNum(p.rpe), limite: fmtNum(t), motivo: p.motivoRpe });
-    return { sesion: { id: p.sesion, cliente: cid, fecha: r.dia, inicio: r.inicio, fin: fin, segundos: Math.round(r.activo / 1000), rpe: p.rpe === null ? '' : p.rpe,
-                       motivoRpe: p.motivoRpe, notas: p.notas, formato: p.formato, nueva: p.nueva }, filas: filas, avisos: avisos };
+    var ses = { id: p.sesion, cliente: cid, fecha: r.dia, inicio: r.inicio, fin: fin, segundos: Math.round(r.activo / 1000), rpe: p.rpe === null ? '' : p.rpe,
+                motivoRpe: p.motivoRpe, notas: p.notas, formato: p.formato, nueva: p.nueva };
+    if (p.plan) { ses.plan = { dia: p.plan.dia, bloque: p.plan.bloque, sesionBloque: p.plan.sesionBloque, propuesta: p.plan.propuesta, fase: p.plan.fase };
+                  if (p.notaJ !== null && p.notaJ !== undefined) { ses.nota = p.notaJ; ses.etiquetas = (p.etq || []).join(', '); } }
+    return { sesion: ses, filas: filas, avisos: avisos };
   }
 
   // ---------- Pendientes ----------
@@ -1392,7 +1746,8 @@ var App = (function () {
     var hoy = hoyIso();
     var preg = preguntasVisibles(), av = S.snap.avisos || [];
     var val = clientesActivos().filter(function (c) { return tocaValorar(c.id) && conVisita(c.id, hoy, hoy); });
-    return { preg: preg, av: av, val: val, total: preg.length + av.length + val.length };
+    var plan = preguntasPlanHoy();
+    return { preg: preg, av: av, val: val, plan: plan, total: preg.length + av.length + val.length + plan.length };
   }
   function cuandoPuedas() {
     var hoy = hoyIso(), act = {}; clientesActivos().forEach(function (c) { act[c.id] = true; });
@@ -1408,6 +1763,8 @@ var App = (function () {
       sinDatos: clientesActivos().filter(function (c) { return !c.sexo || !c.nacimiento; }).sort(porEstadoYNombre),
       borrador: S.snap.ejercicios.filter(function (e) { return e.estado === 'borrador'; }),
       // Las demás valoraciones que tocan: activos o con visita en la agenda (un estacional sin visitas no cuenta), por fecha de visita
+      sinPlan: clientesActivos().filter(function (c) { var hz = hallazgosDe(c.id); return c.estado === 'activo' && hz && hz.bloqueos && hz.bloqueos.length; }).sort(porEstadoYNombre),
+      tolerar: clientesActivos().filter(function (c) { return tolerarDe(c.id).length; }).sort(function (x, y) { return tolerarDe(y.id).length - tolerarDe(x.id).length; }),
       valOtros: clientesActivos().filter(function (c) { return tocaValorar(c.id) && !conVisita(c.id, hoy, hoy) && (c.estado === 'activo' || proximaVisita(c.id)); })
         .sort(function (a, b) { var x = proximaVisita(a.id) || '9', y = proximaVisita(b.id) || '9'; return x < y ? -1 : x > y ? 1 : 0; })
     };
@@ -1418,6 +1775,11 @@ var App = (function () {
     h.push('<h3 class="sec">Para hoy</h3>');
     if (!a.total) h.push('<div class="card"><div class="sub">' + ico('check') + ' Nada urgente.</div></div>');
     if (a.preg.length) h.push(htmlPreguntas(a.preg));
+    if (a.plan.length) {
+      var porC = {}; a.plan.forEach(function (x) { (porC[x.cid] = porC[x.cid] || []).push(x.q); });
+      h.push('<div class="card a"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('lista') + 'Carena pregunta · ' + a.plan.length + '</div><div class="sub">Para las visitas de hoy de quien ya planifica Carena. Nada sube ni baja sin tu respuesta; sin respuesta, se queda como estaba.</div>' +
+        Object.keys(porC).map(function (cid) { return '<div style="margin-top:12px"><b>' + esc(nombreCli(cid)) + '</b>' + porC[cid].map(function (q) { return htmlPregPlan(cid, q); }).join('') + '</div>'; }).join('') + '</div>');
+    }
     if (a.av.length) {
       var porCli = {}; a.av.forEach(function (x) { (porCli[x.cliente] = porCli[x.cliente] || []).push(x); });
       h.push('<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('alerta') + 'Avisos de seguridad sin revisar · ' + a.av.length + '</div><div class="sub">Lo que pasó de un límite o pidió atención al registrar. Revísalo y márcalo; el límite no cambia.</div>' +
@@ -1446,6 +1808,10 @@ var App = (function () {
       var o = {}; lista.forEach(function (x) { o[x.cliente] = (o[x.cliente] || 0) + 1; });
       return '<div class="caja" style="margin-top:10px">' + cinco(Object.keys(o), function (cid) { return '<button class="item" onclick="App.ir(\'seguridad\',\'' + cid + '\')"><span><b>' + esc(nombreCli(cid)) + '</b> <span class="sub">· ' + o[cid] + '</span></span>' + ico('escudo') + '</button>'; }) + '</div>';
     };
+    if (b.sinPlan.length) h.push(bloque('stop', 'Carena no puede proponerles sesión · ' + b.sinPlan.length, 'Con una duda de seguridad abierta, el planificador no propone nada. Resuélvela en la Seguridad de cada uno: la propuesta se rehace sola.',
+      '<div class="caja" style="margin-top:10px">' + cinco(b.sinPlan, function (c) { return '<button class="item" onclick="App.ir(\'seguridad\',\'' + c.id + '\')"><span><b>' + esc(c.nombre) + '</b><br><span class="sub">' + esc(hallazgosDe(c.id).bloqueos[0]) + '</span></span>' + ico('escudo') + '</button>'; }) + '</div>'));
+    if (b.tolerar.length) h.push(bloque('candado', 'Tolerado por histórico · ' + b.tolerar.reduce(function (n, c) { return n + tolerarDe(c.id).length; }, 0), 'Ejercicios vigilados que hacen contigo desde hace tiempo sin molestias y que no tienen prueba registrada: mientras sigan «sin probar», Carena no los propone. Pasarlos a tolerado es relajar: lo decides tú, cliente a cliente.',
+      cinco(b.tolerar, function (c) { var l = tolerarDe(c.id); return '<div class="preg"><div><b>' + esc(c.nombre) + '</b> <span class="sub">· ' + l.length + '</span><div class="sub">' + esc(l.slice(0, 3).map(function (x) { return nombreEj(x.ej); }).join(', ')) + (l.length > 3 ? '…' : '') + '</div></div><button class="btn mini" onclick="App.abrirTolerar(\'' + c.id + '\')">' + ico('candado') + 'Revisar</button></div>'; })));
     if (b.revisar.length) h.push(bloque('alerta', 'Tolerancia por revisar · ' + b.revisar.length, 'Molestias de 4 o más. Decide en su Seguridad: en prueba, descartado por ahora o descartado.', porCliente(b.revisar)));
     if (b.condPC.length || b.limPC.length) h.push(bloque('escudo', 'Por confirmar · ' + (b.condPC.length + b.limPC.length), 'Condiciones y límites que la seguridad todavía no usa. Confirmar es endurecer (libre); descartar o cerrar es relajar.', porCliente(b.condPC.concat(b.limPC))));
     if (b.sinCons.length) h.push(bloque('doc', 'Sin consentimiento registrado · ' + b.sinCons.length, 'Con la fecha que figura en el papel. Con foto o PDF, desde «Registrar»; solo la fecha, de varios a la vez.',
@@ -1550,6 +1916,7 @@ var App = (function () {
       (c.ficha ? '<a class="btn mini" href="' + esc(c.ficha) + '" target="_blank">Ficha v4</a>' : '') + (c.carpeta ? '<a class="btn mini" href="' + esc(c.carpeta) + '" target="_blank">Carpeta</a>' : '') + '</div></div>';
     h += '<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('escudo') + 'Seguridad</div><div class="kpi"><div>Techo de RPE<b>' + (t !== null ? fmtNum(t) : '—') + '</b></div><div>Condiciones confirmadas<b>' + (I.cond[cid] || []).filter(function (x) { return x.estado === 'confirmada'; }).length + '</b></div>' +
       '<div>Por revisar<b class="' + (cuenta(/^revisar$/) ? 'amb-txt' : '') + '">' + cuenta(/^revisar$/) + '</b></div><div>En prueba<b>' + cuenta(/^en prueba$/) + '</b></div><div>Descartados<b>' + cuenta(/^descartado/) + '</b></div></div>' + chipsCliente(cid, null) + '</div>';
+    h += htmlPlanCliente(cid);
     h += '<div id="graf"></div><h2>' + ico('reloj') + 'Últimas sesiones</h2><div id="ult"><div class="vacio">Cargando…</div></div>';
     h += htmlValoracionesCliente(cid) + htmlDocumentosCliente(cid);
     $('main').innerHTML = h;
@@ -1625,6 +1992,7 @@ var App = (function () {
   function relaja(tabla, antes, campos, cid) {
     var out = [], cambia = function (k, kl) { return k in campos && !(antes && String(antes[kl] === undefined ? '' : antes[kl]) === String(campos[k])); };
     if (tabla === 'Tolerancia' && antes && cambia('Estado', 'estado') && RANGO_TOL[campos['Estado']] < RANGO_TOL[antes.estado]) out.push('de «' + antes.estado + '» a «' + campos['Estado'] + '»');
+    if (tabla === 'Tolerancia' && !antes && campos['Estado'] === 'tolerado') out.push('alta directa como «tolerado» (sin pasar por la prueba)');
     if (tabla === 'Condiciones' && antes) {
       if (cambia('Estado', 'estado') && RANGO_COND[campos['Estado']] < RANGO_COND[antes.estado]) out.push('de «' + antes.estado + '» a «' + campos['Estado'] + '»');
       if (cambia('Etiqueta', 'etiqueta') && antes.estado === 'confirmada') out.push('cambia lo que se vigila');
@@ -1714,7 +2082,8 @@ var App = (function () {
       return '<div class="item" style="display:block' + (x.estado === 'resuelta' || x.estado === 'descartada' ? ';opacity:.6' : '') + '"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><b>' + esc(x.condicion || x.etiqueta) + '</b> <span class="chip ' + cls + '">' + esc(x.estado) + '</span>' + (x.lado ? ' <span class="sub">' + esc(x.lado) + '</span>' : '') + '</div><div class="acciones" style="margin:0">' + acc + '</div></div>' +
         '<div class="sub">' + [x.zona, x.fuente ? 'fuente: ' + x.fuente : '', x.confirmada ? 'confirmada el ' + fechaMedia(x.confirmada) : '', x.medicacion ? 'medicación: ' + x.medicacion : ''].filter(Boolean).map(esc).join(' · ') + '</div>' +
         (vg ? '<div class="sub" style="margin-top:4px">' + ico('alerta') + (vg.atributos ? ' Vigila: ' + esc(vg.atributos) : ' Sin atributos de ejercicio: no marca ninguno en la sesión') + (vg.estado !== 'aprobada' ? ' <span class="chip a">regla en ' + esc(vg.estado) + '</span>' : '') + '</div>' : '') +
-        (x.notas ? '<div class="sub" style="margin-top:4px;white-space:pre-line">' + esc(x.notas) + '</div>' : '') + '</div>';
+        (x.notas ? '<div class="sub" style="margin-top:4px;white-space:pre-line">' + esc(x.notas) + '</div>' : '') +
+        (/-ficha$/.test(x.id) && x.estado === 'por confirmar' ? '<div class="nota a">' + ico('alerta') + ' Son las notas tal cual venían en su ficha de v4. Repártelas: crea cada condición con su etiqueta y cada límite con los botones de abajo. Cuando no quede nada por repartir, pulsa «Confirmar». Hasta entonces Carena no le propone sesiones.</div>' : '') + '</div>';
     }).join('') || '<div class="vacio">Sin condiciones</div>') + '</div><div class="acciones"><button class="btn mini" onclick="App.formCond(\'\')">' + ico('mas') + 'Condición</button></div>';
     // Límites
     h += '<h2>' + ico('stop') + 'Límites</h2><div class="caja">' + (lims.map(function (l) {
@@ -2376,17 +2745,17 @@ var App = (function () {
     d.onclick = function () { d.remove(); S.reg = S.pausado; S.pausado = null; S.vista = 'sesion'; pintar(); animar('an-ade'); };
     document.body.appendChild(d); setTimeout(function () { d.remove(); }, 9000);
   }
-  function empezarOSeguir(lista) {
+  function empezarOSeguir(lista, origen) {
     var p = S.pausado;
     if (p && p.clientes.join(',') === lista) { S.reg = p; S.pausado = null; S.vista = 'sesion'; pintar(); animar('an-ade'); return; }
     if (p) {
       modal('<h3>Tienes un registro sin cerrar</h3><div class="sub">De ' + esc(p.clientes.map(nombreCorto).join(' y ')) + ' (' + fechaCorta(p.dia) + '). Si empiezas otro, ese se pierde.</div>' +
         '<div class="pie-modal"><button class="btn" id="seguir-p">Seguir con ese</button><button class="btn peligro" id="nuevo-p">Descartarlo y empezar</button></div>');
       $('seguir-p').onclick = function () { cerrarModal(); S.reg = p; S.pausado = null; S.vista = 'sesion'; pintar(); };
-      $('nuevo-p').onclick = function () { cerrarModal(); S.pausado = null; empezar(lista); };
+      $('nuevo-p').onclick = function () { cerrarModal(); S.pausado = null; empezar(lista, origen); };
       return;
     }
-    empezar(lista);
+    empezar(lista, origen);
   }
   document.addEventListener('DOMContentLoaded', arrancar);
 
@@ -2408,7 +2777,9 @@ var App = (function () {
            valSet: valSet, valFila: valFila, valQuitar: valQuitar, valDescartar: valDescartar, valAnadir: valAnadir, valFiltrar: valFiltrar, valElegir: valElegir, guardarValoracion: guardarValoracion,
            documento: documento, docArchivo: docArchivo, guardarDocumento: guardarDocumento, editarCliente: editarCliente, guardarCliente: guardarCliente,
            guardarAlta: guardarAlta, nuevaAlta: nuevaAlta, invitar: invitar, crearInvitacion: crearInvitacion, copiarEnlace: copiarEnlace, pedirFirma: pedirFirma, firmaTodos: firmaTodos, firmaTodosOk: firmaTodosOk,
-           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, _S: S, _I: function () { return I; } };
+           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, verProp: verProp, cerrarProp: cerrarProp, propEd: propEd, propSeguridad: propSeguridad, empezarCarena: empezarCarena, plResp: plResp, pedirProp: pedirProp, propEnfoque: propEnfoque, propEnSesion: propEnSesion,
+           abrirTolerar: abrirTolerar, tolerarListo: tolerarListo, guardarTolerar: guardarTolerar, editarPlan: editarPlan, planListo: planListo, guardarPlan: guardarPlan, setNotaJ: setNotaJ, setEtq: setEtq,
+           guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, _S: S, _I: function () { return I; } };
 })();
 </script>
 </body>

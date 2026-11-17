@@ -404,6 +404,21 @@ label.casilla>span{flex:1;min-width:0;line-height:1.35}
 .fp.vac{padding-left:28px}
 .fp .btn.mini{text-align:left;white-space:normal}
 .ej .consigna{font-size:12.5px;color:var(--sec);margin-top:2px}
+/* 0.8: formatos, parámetros y encargos */
+.par-det>summary{display:block;font-weight:600;cursor:pointer}
+.par-rej{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px;margin-top:6px}
+.par{display:flex;flex-direction:column;gap:4px;min-width:0}
+.par small{font-size:12px;color:var(--sec);line-height:1.25}
+.par input{min-height:40px;padding:8px 10px}
+.par.chk{flex-direction:row;align-items:center;gap:8px;padding-top:16px}
+.par.chk input{width:22px;height:22px;min-height:0;flex:none}
+.fbloque{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 14px 7px;background:var(--blanco);border-top:1px solid var(--piedra-cl)}
+.fbloque>div{min-width:0}
+.fbloque .btn{flex:none}
+.fres{padding:8px 14px 12px;border-top:1px dashed var(--piedra);background:var(--cal)}
+.fres>small{font-size:12px;font-weight:600;color:var(--sec)}
+.fres .par-rej{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.cr-tit{font-size:12.5px;color:#D8D1C4;text-align:center;margin-top:8px}
 </style>
 </head>
 <body>
@@ -459,7 +474,7 @@ label.casilla>span{flex:1;min-width:0;line-height:1.35}
 /* Carena · app instalable. Sustituye a google.script.run: las mismas llamadas viajan por HTTPS a la puerta de Carena
    con la llave de este dispositivo. Sin llave, pide el código de vincular. La llave no sale nunca en una dirección. */
 (function () {
-  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.7.0';
+  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.8.0';
   function leer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function poner(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
   function pedir(cuerpo) {
@@ -572,7 +587,7 @@ var App = (function () {
   var I = {};
   var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var VERSION = '0.7.0', T0 = Date.now();
+  var VERSION = '0.8.0', T0 = Date.now();
 
   // ---------- Utilidades ----------
   var memoria = {};
@@ -758,6 +773,7 @@ var App = (function () {
     if (o.tipo === 'catalogo') return 'Catálogo' + (d.accion === 'nuevo' ? ' · ejercicio nuevo' : '');
     if (o.tipo === 'cliente') return 'Datos de ' + nombreCli(d.cliente);
     if (o.tipo === 'visita') return (d.resultado ? 'No se hizo · ' : 'Visita deshecha · ') + (d.ids || []).map(function (id) { var a = (S.snap.agenda || []).filter(function (x) { return x.id === id; })[0]; return a ? nombreCorto(a.cliente) : id; }).join(', ');
+    if (o.tipo === 'encargo') return (d.enfoque || d.formato ? 'Encargo · ' : 'Encargo quitado · ') + nombreCorto(d.cliente) + ' · ' + fechaCorta(d.fecha);
     if (o.tipo === 'consentimiento') return 'Documentos firmados · ' + (d.items || []).length + ' cliente' + ((d.items || []).length > 1 ? 's' : '');
     return o.tipo;
   }
@@ -790,6 +806,11 @@ var App = (function () {
       Object.keys(d.campos || {}).forEach(function (col) { if (CAMPOS_PLAN[col]) cp[CAMPOS_PLAN[col]] = d.campos[col]; });
       var pp = s.planificador && s.planificador.propuestas ? s.planificador.propuestas[d.cliente] : null;
       if (pp && 'Planifica' in d.campos) pp.sombra = d.campos['Planifica'] !== 'Carena';
+    }
+    else if (op.tipo === 'encargo') {
+      var pe = s.planificador; if (!pe || !pe.propuestas) return;
+      pe.encargos = pe.encargos || {}; var ke = d.cliente + '|' + d.fecha;
+      if (d.enfoque || d.formato) pe.encargos[ke] = { enfoque: d.enfoque || '', formato: d.formato || '', parametros: d.parametros || null }; else delete pe.encargos[ke];
     }
     else if (op.tipo === 'aviso') s.avisos = (s.avisos || []).filter(function (a) { return (d.ids || []).indexOf(a.id) < 0; });
     else if (op.tipo === 'manana') s.preguntas = (s.preguntas || []).filter(function (p) { return p.fila !== d.fila; });
@@ -854,7 +875,7 @@ var App = (function () {
     $('btn-act').classList.add('gira');
     google.script.run.withSuccessHandler(function (d) {
       $('btn-act').classList.remove('gira');
-      S.snap = d; reaplicar(); guardar(K.snap, S.snap); limpiarHechas(); indexar(); S.red = S.cola.length ? S.red : 'ok'; pintarRed();
+      var antes = S.snap && S.snap.planificador; S.snap = d; masNuevas(antes); reaplicar(); guardar(K.snap, S.snap); limpiarHechas(); indexar(); S.red = S.cola.length ? S.red : 'ok'; pintarRed();
       if (!S.reg && !$('capa').innerHTML) pintar(); else pintarBadge();
       clearTimeout(S.tRehace);
       if (d.rehaciendo) { S.tRehace = setTimeout(function () { actualizar(false); }, 100000); if (aMano) toast('Carena está rehaciendo los datos: llegan solos en 1–2 minutos'); }
@@ -867,6 +888,11 @@ var App = (function () {
       if (!S.snap) $('main').innerHTML = '<div class="vacio">' + (red ? 'No hay conexión y este iPad aún no tiene datos guardados.<br>Ábrela una vez con conexión.' : 'Carena no ha podido preparar los datos: ' + esc(msg)) + '</div>';
       else if (aMano) toast(red ? 'Sin conexión: sigues con los datos guardados' : 'No se pudo actualizar: ' + msg);
     }).apiInicio(aMano ? { fresco: true } : null);
+  }
+  /** Las propuestas pedidas al momento son más nuevas que el resumen guardado hasta que este se rehace: se quedan las nuevas. */
+  function masNuevas(antes) {
+    var pl = S.snap && S.snap.planificador; if (!antes || !antes.propuestas || !pl || !pl.propuestas) return;
+    Object.keys(antes.propuestas).forEach(function (c) { var a = antes.propuestas[c], n = pl.propuestas[c]; if (a && a.creada && n && n.fecha === a.fecha && String(n.creada || '') < String(a.creada)) pl.propuestas[c] = a; });
   }
   function limpiarHechas() {
     var h = leer(K.hechas, {}), app = {};
@@ -909,7 +935,7 @@ var App = (function () {
   function propDe(cid, dia) { var p = PLN().propuestas[cid]; return p && p.fecha === dia ? p : null; }
   function conCarena(cid) { return (I.C[cid] || {}).planifica === 'Carena'; }
   function pregDe(p, clase, tipo) { return ((p && p.preguntas) || []).filter(function (q) { return q.clase === clase && q.tipo === tipo; })[0] || null; }
-  function nombreEnfoque(id) { var e = (PLN().enfoques || []).filter(function (x) { return x.id === id; })[0]; return e ? e.nombre : id; }
+  function nombreEnfoque(id) { if (id === 'ENF_CCE') return 'Cuerpo completo equilibrado'; var e = (PLN().enfoques || []).filter(function (x) { return x.id === id; })[0]; return e ? e.nombre : id; }
   function ediciones(pid) { return leer(K.ped, {})[pid] || {}; }
   function editar(pid, hueco, e) {
     var t = leer(K.ped, {}), vivas = {}; Object.keys(PLN().propuestas).forEach(function (c) { vivas[PLN().propuestas[c].id] = true; });
@@ -968,28 +994,143 @@ var App = (function () {
     p.hayPrueba = prueba;
     return p;
   }
-  function dosisProp(f) { return (f.rondas ? f.rondas + '× ' : '') + ([f.dosis, f.carga].filter(Boolean).join(' · ') || '—'); }
+  function dosisProp(f, p) { return (f.rondas && !(p && esDens(p.formato)) ? f.rondas + '× ' : '') + ([f.dosis, f.carga].filter(Boolean).join(' · ') || '—'); }
+  // ---------- Formatos de densidad (0.8) ----------
+  var FMT_N = { 'circuito': 'Circuito', 'estaciones': 'Estaciones', 'intervalos': 'Intervalos', 'emom': 'EMOM', 'amrap': 'AMRAP', 'for time': 'FOR TIME', 'hiit': 'HIIT' };
+  var DENS = ['intervalos', 'emom', 'amrap', 'for time'];
+  function esDens(f) { return DENS.indexOf(String(f || '').toLowerCase()) >= 0; }
+  function nombreFmt(f) { return FMT_N[String(f || '').toLowerCase()] || f || ''; }
+  /** Qué es un bloque y cuánto dura, en una línea. */
+  function textoBloque(b) {
+    var nh = (b.huecos || []).length, d = '';
+    if (b.formato === 'emom') { var vu = nh ? Math.floor(b.duracion / nh) : 0, re = nh ? Math.round(b.duracion - vu * nh) : 0; return { t: 'EMOM ' + fmtNum(b.duracion) + ' min', d: 'cada minuto, el siguiente ejercicio' + (nh ? ' · ' + vu + (vu === 1 ? ' vuelta' : ' vueltas') + (re ? ' y ' + re + ' min más' : '') : '') }; }
+    if (b.formato === 'amrap') return { t: 'AMRAP ' + fmtNum(b.duracion) + ' min', d: 'todas las rondas que salgan con buena técnica' };
+    if (b.formato === 'for time') return { t: 'FOR TIME · ' + b.rondas + (b.rondas === 1 ? ' ronda' : ' rondas'), d: 'límite ' + fmtNum(b.limite) + ' min' + (b.estimado ? ' · lo normal, unos ' + b.estimado + ' min' : '') };
+    if (b.formato === 'intervalos') return { t: 'Intervalos ' + b.trabajo + '/' + b.descanso + ' s', d: b.rondas + (b.rondas === 1 ? ' vuelta' : ' vueltas') + ' · unos ' + b.minutos + ' min' };
+    return { t: nombreFmt(b.formato), d: d };
+  }
+  /** Lo que puedes fijar tú en cada formato (vacío = lo calcula Carena). */
+  var PAR = {
+    'intervalos': [['trabajo', 'Trabajo (s)'], ['descanso', 'Descanso (s)'], ['rondas', 'Vueltas por bloque'], ['bloques', 'Bloques'], ['descansoBloques', 'Entre bloques (min)']],
+    'emom': [['duracion', 'Minutos por bloque'], ['bloques', 'Bloques'], ['descansoBloques', 'Entre bloques (min)']],
+    'amrap': [['duracion', 'Minutos por bloque'], ['bloques', 'Bloques'], ['descansoBloques', 'Entre bloques (min)']],
+    'for time': [['limite', 'Límite por bloque (min)'], ['rondas', 'Rondas por bloque'], ['bloques', 'Bloques'], ['descansoBloques', 'Entre bloques (min)']]
+  };
+  var PAR_TOPE = { trabajo: [10, 120], descanso: [0, 180], rondas: [1, 10], duracion: [4, 60], limite: [4, 60], bloques: [1, 4], descansoBloques: [0, 5] };
+  function htmlParams(pre, fm, val, ph, filas) {
+    val = val || {}; ph = ph || {};
+    var h = '<div class="par-rej">' + (PAR[fm] || []).map(function (c) {
+      var t = PAR_TOPE[c[0]], v = val[c[0]], q = ph[c[0]];
+      return '<label class="par"><small>' + c[1] + '</small><input type="number" inputmode="decimal" id="' + pre + '-' + c[0] + '" min="' + t[0] + '" max="' + t[1] + '" step="' + (c[0] === 'duracion' || c[0] === 'limite' ? '0.5' : '1') + '" value="' + (v === undefined || v === null ? '' : esc(String(v))) + '" placeholder="' + (q === undefined || q === null ? '' : esc(String(q))) + '"></label>';
+    }).join('') + '</div>';
+    if (fm !== 'intervalos' && filas && filas.length) h += '<div class="sub" style="margin-top:8px">Repeticiones por ejercicio (vacío = las de Carena):</div><div class="par-rej">' + filas.map(function (f) {
+      var r = ((val.reps || {})[f.ejercicio]), q = /^(\d+)/.exec(String(f.dosis || ''));
+      return '<label class="par"><small>' + esc(f.nombre) + '</small><input type="number" inputmode="numeric" min="1" max="50" data-rep="' + esc(f.ejercicio) + '" data-pre="' + pre + '" value="' + (r ? r : '') + '" placeholder="' + (q ? q[1] : '') + '"></label>';
+    }).join('') + '</div>';
+    return h + '<div class="sub" style="margin-top:6px">Vacío = lo calcula Carena. Si solo cambias el tiempo, el trabajo se recalcula para que quepa. Un bloque largo: pon 1 en «Bloques». Lo que salga de la base te lo marca antes de empezar.</div>';
+  }
+  function leerParams(pre, fm) {
+    var o = {}, reps = {};
+    (PAR[fm] || []).forEach(function (c) { var el = $(pre + '-' + c[0]), v = el ? num(el.value) : null; if (v !== null) o[c[0]] = v; });
+    [].forEach.call(document.querySelectorAll('input[data-pre="' + pre + '"]'), function (el) { var v = num(el.value); if (v !== null) reps[el.getAttribute('data-rep')] = v; });
+    if (Object.keys(reps).length) o.reps = reps;
+    return o;
+  }
+  function fueraDeTope(par) { return Object.keys(par).filter(function (k) { var t = PAR_TOPE[k]; return t && (par[k] < t[0] || par[k] > t[1]); }); }
+  /** Intervalos más duros que la base de su perfil (mismo criterio que el motor): en el perfil prudente piden motivo. */
+  function intervalosDuros(pp, par) {
+    var b = (pp && pp.base) || null; if (!b) return false;
+    var t = par.trabajo !== undefined ? par.trabajo : (pp.perfil === 'prudente' ? b[0] : pp.trabajo), d = par.descanso !== undefined ? par.descanso : (pp.perfil === 'prudente' ? b[1] : pp.descanso);
+    return t / (t + d) > b[0] / (b[0] + b[1]) + 1e-9 || t > b[0];
+  }
+  function encargoDe(ids, dia) { var e = PLN().encargos || {}; for (var i = 0; i < ids.length; i++) if (e[ids[i] + '|' + dia]) return e[ids[i] + '|' + dia]; return null; }
+  /** Elegir enfoque, formato o parámetros de una visita: queda como encargo (la noche y los recálculos lo respetan). Sin conexión, va a la cola. */
+  function elegir(lista, dia, el, luego) {
+    var ids = lista.split(','), d = { cliente: ids[0], fecha: dia, enfoque: el.enfoque || '', formato: el.formato || '', parametros: el.parametros || null, motivo: el.motivo || '' };
+    if (!enLinea()) { hacer('encargo', d); toast('Sin conexión: queda encargado y la propuesta se rehace al volver la conexión'); if (S.vp) pintarProp(); else pintar(); return; }
+    ids.slice(1).forEach(function (c) { registrarLocal('encargo', { cliente: c, fecha: dia, enfoque: '', formato: '' }); });
+    registrarLocal('encargo', d);
+    pedirProp(lista, dia, Object.assign({ encargo: true }, d), luego);
+  }
+  /** Los parámetros que fijaste (con su motivo), para no perderlos al cambiar el enfoque. */
+  function parActual(p) { var pp = p.parametros || {}, mo = pp.motivo || p.relaja || ''; return esDens(p.formato) && p.aCriterio ? Object.assign({}, pp.manual, mo ? { motivo: mo } : {}) : null; }
+  function listaVp(cid) { return S.vp ? S.vp.lista.join(',') : cid; }
+  function propFormato(cid, dia, v) {
+    var p = propLista(cid, dia); if (!p) return;
+    elegir(listaVp(cid), dia, { enfoque: p.enfoque || '', formato: v === p.formatoBase ? '' : v });
+  }
+  function propParam(cid, dia, base) {
+    var p = propLista(cid, dia); if (!p || !esDens(p.formato)) return;
+    var pre = 'par-' + cid, par = base ? {} : leerParams(pre, p.formato), mo = base ? '' : (($(pre + '-motivo') || {}).value || '').trim(), fu = fueraDeTope(par);
+    if (fu.length) { toast('Fuera de lo posible: ' + fu.join(', ')); return; }
+    if (!base && p.formato === 'intervalos' && (p.parametros || {}).perfil === 'prudente' && intervalosDuros(p.parametros, par) && mo.length < 4) { toast('Su perfil es prudente: un reparto más duro necesita el motivo'); var m = $(pre + '-motivo'); if (m) m.focus(); return; }
+    if (mo) par.motivo = mo;
+    S.parAbierto = cid;
+    elegir(listaVp(cid), dia, { enfoque: p.enfoque || '', formato: p.formato, parametros: Object.keys(par).length ? par : null, motivo: mo });
+  }
+  /** Lo confirmado vale para esos parámetros: si cambian, se vuelve a confirmar. */
+  function claveFuera(p) { return p.id + '|' + (p.fueraDeBase || []).join('·') + '|' + (p.relaja || ''); }
+  function confFuera(cid, dia) { var p = propDe(cid, dia); if (!p) return; S.confFuera = S.confFuera || {}; S.confFuera[claveFuera(p)] = true; pintarProp(); }
+  function faltaConfirmar(lista, dia) { return lista.some(function (cid) { var p = propDe(cid, dia); return p && p.estado === 'ok' && (p.fueraDeBase || []).length && !(S.confFuera || {})[claveFuera(p)]; }); }
+  // ---------- Encargos para una visita futura ----------
+  function encargar(lista, dia) {
+    var ids = lista.split(','), e = encargoDe(ids, dia) || {}, par = e.parametros || {};
+    S.enc = { lista: ids, dia: dia, enfoque: e.enfoque || '', formato: e.formato || '', par: par, motivo: par.motivo || '' };
+    pintarEncargo();
+  }
+  function pintarEncargo() {
+    var x = S.enc; if (!x) return;
+    var e = encargoDe(x.lista, x.dia), enf = PLN().enfoques || [];
+    var h = '<h3>Encargo para ' + esc(x.lista.map(nombreCorto).join(' y ')) + '</h3><div class="sub">' + esc(fechaLarga(x.dia)) + ' · lo que pidas aquí manda sobre lo que toca. La seguridad se comprueba igual: si ese día no se puede, Carena te lo dice y propone lo de siempre.</div>' +
+      '<div class="campo"><label for="enc-enf">Enfoque</label><select id="enc-enf">' + opts([['', 'Lo que toca'], ['ENF_CCE', 'Cuerpo completo equilibrado (si ese día cabe)']].concat(enf.map(function (q) { return [q.id, q.nombre]; })), x.enfoque) + '</select></div>' +
+      '<div class="campo"><label for="enc-fmt">Formato</label><select id="enc-fmt" onchange="App.encFormato(this.value)">' + opts([['', 'El de siempre']].concat(DENS.map(function (f) { return [f, FMT_N[f]]; })), x.formato) + '</select></div>';
+    if (esDens(x.formato)) h += '<div class="campo"><label>Parámetros</label>' + htmlParams('enc', x.formato, x.par, {}, null) + '</div>';
+    h += '<div class="campo"><label for="enc-mot">Motivo (opcional; obligatorio si relajas unos intervalos prudentes)</label><input type="text" id="enc-mot" value="' + esc(x.motivo || '') + '"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarEncargo()">Cancelar</button>' + (e ? '<button class="btn peligro" onclick="App.guardarEncargo(true)">Quitar el encargo</button>' : '') + '<button class="btn pri" onclick="App.guardarEncargo()">Guardar el encargo</button></div>';
+    modal(h);
+  }
+  function encLeer() { var x = S.enc; x.enfoque = $('enc-enf').value; x.motivo = $('enc-mot').value.trim(); if (esDens(x.formato)) x.par = leerParams('enc', x.formato); }
+  function encFormato(v) { encLeer(); S.enc.formato = v; S.enc.par = {}; pintarEncargo(); }
+  function cerrarEncargo() { S.enc = null; cerrarModal(); }
+  function guardarEncargo(quitar) {
+    var x = S.enc; if (!x) return; encLeer();
+    var par = quitar || !esDens(x.formato) ? {} : x.par, fu = fueraDeTope(par);
+    if (fu.length) { toast('Fuera de lo posible: ' + fu.join(', ')); return; }
+    if (x.motivo && Object.keys(par).length) par.motivo = x.motivo;
+    var d = quitar ? { cliente: x.lista[0], fecha: x.dia, enfoque: '', formato: '', parametros: null, motivo: '' }
+                   : { cliente: x.lista[0], fecha: x.dia, enfoque: x.enfoque, formato: x.formato, parametros: Object.keys(par).length ? par : null, motivo: x.motivo };
+    if (!quitar && !d.enfoque && !d.formato) { toast('Elige un enfoque o un formato'); return; }
+    x.lista.slice(1).forEach(function (c) { if ((PLN().encargos || {})[c + '|' + x.dia]) hacer('encargo', { cliente: c, fecha: x.dia, enfoque: '', formato: '', parametros: null, motivo: '' }); });
+    hacer('encargo', d); S.enc = null; cerrarModal(); pintar();
+    toast(quitar ? 'Encargo quitado: vuelve a lo que toca' : 'Encargado para el ' + fechaCorta(x.dia));
+  }
   function tituloProp(p) { return p.enfoque ? nombreEnfoque(p.enfoque) : 'Día ' + p.dia; }
   function abiertas(p) { return ((p && p.preguntas) || []).filter(function (q) { return !q.respuesta; }); }
   /** La línea de Carena dentro de la tarjeta de la visita. */
   function htmlPropLinea(cid, dia, lista) {
     var p = propLista(cid, dia);
-    if (!p) return conCarena(cid) ? '<div class="prop-linea"><span class="sub"><b>Carena</b> · todavía sin propuesta para este día</span> <button class="btn mini" onclick="App.pedirProp(\'' + lista + '\',\'' + dia + '\')">Pedirla</button></div>' : '';
+    var futura = dia > hoyIso() && cid === lista.split(',')[0], enc = encargoDe(lista.split(','), dia);
+    var bEnc = futura ? '<button class="btn mini" onclick="App.encargar(\'' + lista + '\',\'' + dia + '\')">' + ico('lapiz') + (enc ? 'Encargo' : 'Encargar') + '</button>' : '';
+    var cEnc = enc ? '<span class="chip o">encargo: ' + esc([enc.enfoque ? nombreEnfoque(enc.enfoque) : '', enc.formato ? nombreFmt(enc.formato) : ''].filter(Boolean).join(' · ')) + '</span>' : '';
+    if (!p) return conCarena(cid) || enc ? '<div class="prop-linea"><span class="sub"><b>Carena</b> · todavía sin propuesta para este día</span> <button class="btn mini" onclick="App.pedirProp(\'' + lista + '\',\'' + dia + '\')">Pedirla</button> ' + bEnc + (cEnc ? '<div class="chips">' + cEnc + '</div>' : '') + '</div>' : '';
     if (p.estado !== 'ok') return '<div class="prop-linea"><span class="chip ' + (p.sombra ? 'a' : 'r') + '">' + ico(p.sombra ? 'alerta' : 'stop') + 'Carena no propone</span> <span class="sub">' + esc(((p.bloqueos || [])[0] || {}).texto || '') +
       '</span> <button class="btn mini" onclick="App.ir(\'seguridad\',\'' + cid + '\')">' + ico('escudo') + 'Seguridad</button></div>';
     var n = p.filas.filter(function (f) { return f.seccion === 'principal' && !f.quitada; }).length, ab = abiertas(p).length, vac = (p.vacios || []).filter(function (h) { return !h.cubierto; }).length, ch = [];
     ch.push(p.sombra ? '<span class="chip">en sombra</span>' : '<span class="chip v">planifica Carena</span>');
+    if (esDens(p.formato)) ch.push('<span class="chip z">' + esc(nombreFmt(p.formato)) + (p.aCriterio ? ' · a tu criterio' : '') + '</span>');
+    if (p.enfoque === 'ENF_CCE') ch.push('<span class="chip z">cuerpo completo</span>');
+    if (cEnc) ch.push(cEnc);
     if (ab) ch.push('<span class="chip a">' + ab + (ab === 1 ? ' pregunta' : ' preguntas') + '</span>');
     if (p.filas.some(function (f) { return f.enPrueba && !f.quitada; })) ch.push('<span class="chip a">' + ico('alerta') + '1 en prueba</span>');
     if (vac) ch.push('<span class="chip a">' + vac + (vac === 1 ? ' hueco vacío' : ' huecos vacíos') + '</span>');
     return '<div class="prop-linea"><div class="sub"><b>Carena</b> · ' + esc(tituloProp(p)) + ' · ' + esc(p.fase) + (p.bloque ? ' · bloque ' + p.bloque + ', sesión ' + p.sesionBloque + ' de 8' : '') + ' · ' + n + ' principales · ' +
-      p.rondas + (p.rondas === 1 ? ' ronda' : ' rondas') + (p.minutos ? ' · unos ' + p.minutos.total + ' min' : '') + '</div><div class="chips">' + ch.join('') +
-      '<button class="btn mini" onclick="App.verProp(\'' + lista + '\',\'' + dia + '\')">' + ico('lista') + 'Ver propuesta</button></div></div>';
+      (esDens(p.formato) ? (p.bloques || []).length + ((p.bloques || []).length === 1 ? ' bloque' : ' bloques') : p.rondas + (p.rondas === 1 ? ' ronda' : ' rondas')) + (p.minutos ? ' · unos ' + p.minutos.total + ' min' : '') + '</div><div class="chips">' + ch.join('') +
+      '<button class="btn mini" onclick="App.verProp(\'' + lista + '\',\'' + dia + '\')">' + ico('lista') + 'Ver propuesta</button>' + bEnc + '</div></div>';
   }
   function verProp(lista, dia) { S.vp = { lista: lista.split(','), dia: dia || S.dia || hoyIso() }; pintarProp(); }
   function cerrarProp() { S.vp = null; cerrarModal(); pintar(); }
   function htmlPregPlan(cid, q) {
-    var T = { 'subir': ['Subir', 'v'], 'bajar': ['Bajar', 'a'], 'mantener aquí': ['Mantener aquí', 'z'], 'aceptar nivel': ['Aceptar este nivel', 'z'], 'revisar techo': ['Revisar el techo', 'z'] }[q.tipo] || [q.tipo, ''];
+    var T = { 'subir': ['Subir', 'v'], 'bajar': ['Bajar', 'a'], 'mantener aquí': ['Mantener aquí', 'z'], 'aceptar nivel': ['Aceptar este nivel', 'z'], 'revisar techo': ['Revisar el techo', 'z'], 'cambiar': [q.clase === 'cce' ? 'Cuerpo completo' : 'Cambiar', 'z'] }[q.tipo] || [q.tipo, ''];
     var acc = q.respuesta ? '<span class="chip ' + (q.respuesta === 'sí' ? 'v' : '') + '">' + (q.respuesta === 'sí' ? ico('check') + (q.espera ? 'Sí · falta la respuesta de su pareja' : 'Sí') : 'No') + '</span>'
       : '<div class="escala"><button class="op v" onclick="App.plResp(\'' + cid + '\',\'' + q.id + '\',\'sí\')">Sí</button><button class="op" onclick="App.plResp(\'' + cid + '\',\'' + q.id + '\',\'no\')">No</button></div>';
     return '<div class="preg"><div><div><span class="chip ' + T[1] + '">' + T[0] + '</span> <b>' + esc(q.ejercicio ? nombreEj(q.ejercicio) : 'Toda la sesión') + '</b></div><div style="margin-top:3px">' + esc(q.propuesta) + '</div>' +
@@ -1023,7 +1164,7 @@ var App = (function () {
       if (acc.length) det.push('<div class="acciones" style="margin:6px 0 0">' + acc.join('') + '</div>');
     }
     return '<details class="fp' + (f.quitada ? ' q' : '') + '"><summary><span class="num">' + (f.seccion === 'principal' ? esc(String(f.hueco)) : '') + '</span><span><span class="nom">' + esc(f.nombre) + '</span>' +
-      (f.seccion === 'principal' && f.etiqueta ? ' <span class="sub">' + esc(f.etiqueta) + '</span>' : '') + (ch.length ? '<span class="chips" style="margin-top:3px">' + ch.join('') + '</span>' : '') + '</span><span class="dz">' + esc(dosisProp(f)) + '</span></summary><div class="det">' + det.join('') + '</div></details>';
+      (f.seccion === 'principal' && f.etiqueta ? ' <span class="sub">' + esc(f.etiqueta) + '</span>' : '') + (ch.length ? '<span class="chips" style="margin-top:3px">' + ch.join('') + '</span>' : '') + '</span><span class="dz">' + esc(dosisProp(f, p)) + '</span></summary><div class="det">' + det.join('') + '</div></details>';
   }
   function htmlProp(cid, dia, varios) {
     var p = propLista(cid, dia), c = I.C[cid] || {}, cab = '<div class="nombre">' + esc(c.nombre || cid) + ' <span class="sub">' + esc(cid) + '</span></div>';
@@ -1033,18 +1174,43 @@ var App = (function () {
       '<div class="acciones"><button class="btn mini" onclick="App.propSeguridad(\'' + cid + '\')">' + ico('escudo') + 'Ir a Seguridad</button><button class="btn mini" onclick="App.pedirProp(\'' + cid + '\',\'' + dia + '\')">Volver a calcular</button></div></div>';
     var m = p.minutos || {}, h = '<div class="card">' + cab;
     h += '<div class="kpi"><div>' + (p.enfoque ? 'Enfoque' : 'Día') + '<b>' + esc(p.enfoque ? nombreEnfoque(p.enfoque) : p.dia) + '</b></div><div>Fase<b>' + esc(p.fase) + '</b></div>' + (p.bloque ? '<div>Bloque<b>' + p.bloque + ' · ' + p.sesionBloque + '/8</b></div>' : '') +
-      '<div>Rondas<b>' + p.rondas + '</b></div><div>RPE objetivo<b>≤ ' + fmtNum(p.rpeObjetivo) + '</b></div><div>Tiempo<b>' + (m.total ? '~' + m.total + ' min' : '—') + '</b></div></div>';
-    h += '<div class="chips">' + (p.sombra ? '<span class="chip">En sombra: sigue planificando v4</span>' : '<span class="chip v">Planifica Carena</span>') + (p.motivoFase ? '<span class="chip a">' + esc(p.motivoFase) + '</span>' : '') +
+      (esDens(p.formato) ? '<div>Formato<b>' + esc(nombreFmt(p.formato)) + '</b></div>' : '<div>Rondas<b>' + p.rondas + '</b></div>') + '<div>RPE objetivo<b>≤ ' + fmtNum(p.rpeObjetivo) + '</b></div><div>Tiempo<b>' + (m.total ? '~' + m.total + ' min' : '—') + '</b></div></div>';
+    h += '<div class="chips">' + (p.sombra ? '<span class="chip">En sombra: sigue planificando v4</span>' : '<span class="chip v">Planifica Carena</span>') + (p.motivoFase ? '<span class="chip a">' + esc(p.motivoFase) + '</span>' : '') + (p.cce && p.cce.activo ? '<span class="chip z">Cuerpo completo · ' + esc(p.cce.texto) + '</span>' : '') + (p.aCriterio ? '<span class="chip o">parámetros a tu criterio</span>' : '') +
       (m.total ? '<span class="chip">calentamiento ' + m.calentamiento + ' + principal ' + m.principal + ' + vuelta ' + m.vuelta + ' min' + (m.visita ? ' · visita de ' + m.visita : '') + '</span>' : '') + '</div>';
-    var enf = PLN().enfoques || [];
-    if (enf.length) h += '<div class="campo"><label for="enf-' + cid + '">Hoy toca</label><select id="enf-' + cid + '" onchange="App.propEnfoque(\'' + cid + '\',\'' + dia + '\',this.value)">' +
-      opts([['', 'Lo que toca: día ' + (p.dia || 'A/B')]].concat(enf.map(function (e) { return [e.id, 'Enfoque: ' + e.nombre]; })), p.enfoque || '') + '</select></div>';
+    var enf = PLN().enfoques || [], cc = p.cce || {}, fq = cc.contexto === 'frecuencia';
+    if (enf.length || cc.contexto) h += '<div class="campo"><label for="enf-' + cid + '">Hoy toca</label><select id="enf-' + cid + '" onchange="App.propEnfoque(\'' + cid + '\',\'' + dia + '\',this.value)">' +
+      opts([['', fq ? 'Lo que toca: cuerpo completo (va una vez por semana)' : 'Lo que toca: día ' + (p.dia && p.dia !== 'ENF_CCE' ? p.dia : 'A/B')]].concat(cc.contexto && !fq ? [['ENF_CCE', 'Cuerpo completo equilibrado · ' + cc.texto]] : [])
+        .concat(enf.map(function (e) { return [e.id, 'Enfoque: ' + e.nombre]; })), p.enfoque === 'ENF_CCE' && fq ? '' : p.enfoque || '') + '</select></div>';
+    var fms = p.formatos || [], okF = fms.filter(function (x) { return x.ok; }), noF = fms.filter(function (x) { return !x.ok; });
+    if (fms.length) {
+      h += '<div class="campo"><label for="fmt-' + cid + '">Formato</label><select id="fmt-' + cid + '" onchange="App.propFormato(\'' + cid + '\',\'' + dia + '\',this.value)">' +
+        opts(okF.map(function (x) { return [x.id, x.nombre + (x.id === p.formatoBase ? ' (el de siempre)' : '')]; }), p.formato) + '</select></div>';
+      if (noF.length) h += '<div class="sub" style="margin-top:4px">No se puede hoy: ' + noF.map(function (x) { return '<b>' + esc(x.nombre) + '</b> (' + esc(x.motivo) + ')'; }).join(' · ') + '</div>';
+    }
+    if (esDens(p.formato)) {
+      var pp = p.parametros || {}, b0 = (p.bloques || [])[0] || {}, man = pp.manual || {};
+      var ph = { trabajo: pp.trabajo, descanso: pp.descanso, rondas: b0.rondas, duracion: b0.duracion, limite: b0.limite, bloques: (p.bloques || []).length, descansoBloques: b0.descansoTras };
+      var fil = p.filas.filter(function (f) { return f.seccion === 'principal' && !f.quitada; });
+      h += '<details class="fp par-det"><summary>Parámetros · ' + (p.aCriterio ? 'a tu criterio' : 'los de base') + '</summary><div class="det" style="padding-left:0">' + htmlParams('par-' + cid, p.formato, man, ph, fil) +
+        (p.formato === 'intervalos' && pp.perfil === 'prudente' ? '<div class="nota a">Su perfil es prudente (' + (pp.base || []).join('/') + ' s). Un reparto más duro relaja su base: escribe el motivo.</div>' : '') +
+        '<div class="campo" style="margin-top:8px"><label for="par-' + cid + '-motivo">Motivo (opcional)</label><input type="text" id="par-' + cid + '-motivo" value="' + esc(pp.motivo || p.relaja || '') + '"></div>' +
+        '<div class="acciones" style="margin-top:8px"><button class="btn mini pri" onclick="App.propParam(\'' + cid + '\',\'' + dia + '\')">Aplicar</button>' +
+        (p.aCriterio ? '<button class="btn mini" onclick="App.propParam(\'' + cid + '\',\'' + dia + '\',true)">' + ico('deshacer') + 'Volver a la base</button>' : '') + '</div></div></details>';
+      h += '<div class="sub" style="margin-top:6px">' + (p.bloques || []).map(function (b) { var t = textoBloque(b); return '<b>Bloque ' + b.n + '</b> · ' + esc(t.t) + ' · ' + esc(t.d) + (b.descansoTras ? ' · después, ' + b.descansoTras + ' min de descanso' : ''); }).join('<br>') + '</div>';
+      if ((p.fueraDeBase || []).length) h += '<div class="nota a">' + ico('alerta') + ' Fuera de la base, a tu criterio: ' + esc(p.fueraDeBase.join(' · ')) + (p.relaja ? '<br>Relaja su perfil prudente. Motivo: «' + esc(p.relaja) + '»' : '') + ' ' +
+        ((S.confFuera || {})[claveFuera(p)] ? '<span class="chip v">' + ico('check') + 'Confirmado</span>' : '<button class="btn mini" onclick="App.confFuera(\'' + cid + '\',\'' + dia + '\')">Confirmo</button>') + '</div>';
+    }
     var av = (p.avisos || []).map(function (a) { return a.texto; }).concat(p.avisosValidador || []);
     if (av.length) h += '<div class="nota a">' + av.map(function (t) { return '· ' + esc(t); }).join('<br>') + '</div>';
     var pq = p.preguntas || [];
     if (pq.length) h += '<div class="sec-prop">Preguntas · nada sube ni baja sin tu respuesta</div>' + pq.map(function (q) { return htmlPregPlan(cid, q); }).join('');
     ['calentamiento', 'principal', 'vuelta a la calma'].forEach(function (sec) {
       var fs = p.filas.filter(function (f) { return f.seccion === sec; }); if (!fs.length && sec !== 'principal') return;
+      if (sec === 'principal' && esDens(p.formato) && (p.bloques || []).length) {
+        h += '<div class="sec-prop">principal · ' + esc(nombreFmt(p.formato)) + '</div>';
+        p.bloques.forEach(function (b) { var de = fs.filter(function (f) { return String(f.grupo) === String(b.n); }); if (!de.length) return; h += '<div class="sub" style="margin-top:8px"><b>Bloque ' + b.n + ' · ' + esc(textoBloque(b).t) + '</b></div>' + de.map(function (f) { return htmlFilaProp(cid, p, f); }).join(''); });
+        fs.filter(function (f) { return !p.bloques.some(function (b) { return String(b.n) === String(f.grupo); }); }).forEach(function (f) { h += htmlFilaProp(cid, p, f); });
+      } else
       h += '<div class="sec-prop">' + sec + (sec === 'principal' ? ' · ' + (p.formato || '') : '') + '</div>' + fs.map(function (f) { return htmlFilaProp(cid, p, f); }).join('');
       if (sec === 'principal') (p.vacios || []).forEach(function (v) {
         if (v.cubierto) return;
@@ -1061,12 +1227,14 @@ var App = (function () {
     var vp = S.vp; if (!vp) return;
     var mo = document.querySelector('#capa .modal'), sc = mo ? mo.scrollTop : 0, abiertos = {};
     [].forEach.call(document.querySelectorAll('#capa details.fp[open]'), function (d) { abiertos[d.getAttribute('data-k')] = 1; });
+    if (S.parAbierto) { var dp = document.querySelector('#capa details.par-det'); if (dp) abiertos[dp.getAttribute('data-k')] = 1; S.parAbierto = null; }
     var ok = vp.lista.filter(function (cid) { var p = propDe(cid, vp.dia); return p && p.estado === 'ok'; }), hecha = vp.lista.every(function (cid) { return registradaHoy(cid, vp.dia); });
     var sombra = ok.some(function (cid) { return !conCarena(cid); });
     var h = '<h3 style="display:flex;gap:8px;align-items:center">' + ico('lista', 'g') + 'Propuesta de Carena</h3><div class="sub">' + esc(fechaLarga(vp.dia)) + ' · toca un ejercicio para ver por qué está, cambiarlo o quitarlo</div>' +
       vp.lista.map(function (cid) { return htmlProp(cid, vp.dia, vp.lista.length > 1); }).join('') +
       (ok.length && !hecha && sombra ? '<div class="nota n">Estos clientes siguen con v4. Si empiezas con la propuesta de Carena, la sesión se registra en Carena pero <b>no se escribe en su ficha de v4</b> (v4 no la contará).</div>' : '') +
-      '<div class="pie-modal"><button class="btn" onclick="App.cerrarProp()">Cerrar</button>' + (ok.length && !hecha ? '<button class="btn pri" onclick="App.empezarCarena()">Empezar con esta propuesta</button>' : '') + '</div>';
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarProp()">Cerrar</button>' + (ok.length && !hecha ? (faltaConfirmar(vp.lista, vp.dia) ? '<button class="btn pri" disabled title="Confirma antes lo que sale de la base">Empezar con esta propuesta</button>' : '<button class="btn pri" onclick="App.empezarCarena()">Empezar con esta propuesta</button>') : '') + '</div>' +
+      (ok.length && !hecha && faltaConfirmar(vp.lista, vp.dia) ? '<div class="sub" style="text-align:right">Para empezar, confirma los parámetros que salen de la base.</div>' : '');
     modal(h);
     [].forEach.call(document.querySelectorAll('#capa details.fp'), function (d, i) { d.setAttribute('data-k', i); });
     Object.keys(abiertos).forEach(function (k) { var d = document.querySelector('#capa details.fp[data-k="' + k + '"]'); if (d) d.open = true; });
@@ -1074,12 +1242,13 @@ var App = (function () {
   }
   function propEd(pid, hueco, que) { editar(pid, hueco, que === 'quitar' ? { quitar: true } : que ? { op: que } : null); pintarProp(); }
   function propSeguridad(cid) { S.vp = null; cerrarModal(); ir('seguridad', cid); }
-  function empezarCarena() { var vp = S.vp; if (!vp) return; S.vp = null; cerrarModal(); S.dia = vp.dia; empezarOSeguir(vp.lista.join(','), 'carena'); }
+  function empezarCarena() { var vp = S.vp; if (!vp) return; if (faltaConfirmar(vp.lista, vp.dia)) { toast('Confirma antes los parámetros fuera de la base'); return; } S.vp = null; cerrarModal(); S.dia = vp.dia; empezarOSeguir(vp.lista.join(','), 'carena'); }
   /** Respuesta a una pregunta del planificador. Con techo clínico, el «no» exige motivo. */
   function plResp(cid, qid, r) {
     var p = PLN().propuestas[cid], q = p ? (p.preguntas || []).filter(function (x) { return x.id === qid; })[0] : null; if (!q || q.respuesta) return;
     var manda = function (motivo) {
       hacer('responder', { pregunta: qid, cliente: cid, respuesta: r, motivo: motivo || '' });
+      if (r === 'sí' && q.tipo === 'cambiar' && q.clase === 'cce') { elegir(S.vp ? S.vp.lista.join(',') : cid, S.vp ? S.vp.dia : p.fecha, { enfoque: 'ENF_CCE', formato: esDens(p.formato) ? p.formato : '', parametros: parActual(p), motivo: (parActual(p) || {}).motivo || '' }); return; }
       if (S.vp) pintarProp(); else pintar();
       toast(r === 'sí' ? (q.tipo === 'revisar techo' ? 'Apuntado · revisa su techo en Seguridad' : q.tipo === 'mantener aquí' ? 'Se mantiene: no te lo vuelvo a proponer' : 'Aplicado a la propuesta') : q.tipo === 'subir' ? 'No sube · no te lo pregunto en 14 días' : 'Apuntado');
     };
@@ -1087,8 +1256,8 @@ var App = (function () {
     manda('');
   }
   /** Pide al servidor la propuesta al momento (con conexión): para otro enfoque, para volver a calcular o para una sesión sin cita. */
-  function pedirProp(lista, dia, enfoque, luego) {
-    var ids = lista.split(','), cid = ids[0];
+  function pedirProp(lista, dia, elige, luego) {
+    var ids = lista.split(','), cid = ids[0], el = typeof elige === 'object' && elige ? elige : { enfoque: elige || '' };
     if (!enLinea()) { toast('Sin conexión: la propuesta se calcula en Carena'); return; }
     toast('Calculando la propuesta…');
     google.script.run.withSuccessHandler(function (res) {
@@ -1097,9 +1266,13 @@ var App = (function () {
       guardar(K.snap, S.snap);
       if (luego) luego(res); else if (S.vp) pintarProp(); else pintar();
     }).withFailureHandler(function (err) { toast('No se pudo calcular: ' + String(err && err.message || err)); if (S.vp) pintarProp(); })
-      .apiPropuesta({ cliente: cid, fecha: dia, enfoque: enfoque || '', solo: ids.length === 1 && !!(I.C[cid] || {}).pareja && !(S.vp && S.vp.lista.length > 1) });
+      .apiPropuesta({ cliente: cid, fecha: dia, enfoque: el.enfoque || '', formato: el.formato || '', parametros: el.parametros || null, motivo: el.motivo || '', encargo: el.encargo === true,
+                      solo: ids.length === 1 && !!(I.C[cid] || {}).pareja && !(S.vp && S.vp.lista.length > 1) });
   }
-  function propEnfoque(cid, dia, enfoque) { pedirProp(S.vp ? S.vp.lista.join(',') : cid, dia, enfoque); }
+  function propEnfoque(cid, dia, enfoque) {
+    var p = propLista(cid, dia) || {}, d = esDens(p.formato);
+    elegir(listaVp(cid), dia, { enfoque: enfoque, formato: d ? p.formato : '', parametros: parActual(p), motivo: (parActual(p) || {}).motivo || '' });
+  }
   /** En una sesión vacía (sin cita o sin plan): pedir la propuesta y cargarla. */
   function propEnSesion() {
     var r = S.reg; if (!r) return;
@@ -1115,11 +1288,12 @@ var App = (function () {
     var p = propLista(cid, dia); if (!p || p.estado !== 'ok') return null;
     var filas = p.filas.map(function (f, k) {
       var x = filaDesde({ id: 'F-' + sid + '-P' + dos(k + 1), ejercicio: f.ejercicio, texto: f.nombre, bloque: f.seccion, orden: k + 1, dosis: f.dosis, carga: f.carga, kg: f.kg === null || f.kg === undefined ? '' : f.kg, color: f.color || '', rondas: f.rondas || '' }, true);
-      x.estado = f.quitada ? 'quitada' : 'prescrita'; x.prop = f.deVacio ? '' : p.id + '-' + dos(f.n); x.carena = true; x.hueco = f.hueco; x.elegido = !!f.elegido; x.consigna = f.consigna || ''; x.porque = f.explicacion || '';
+      x.estado = f.quitada ? 'quitada' : 'prescrita'; x.prop = f.deVacio ? '' : p.id + '-' + dos(f.n); x.carena = true; x.hueco = f.hueco; x.elegido = !!f.elegido; x.consigna = f.consigna || ''; x.porque = f.explicacion || ''; x.grupo = f.grupo || '';
       return x;
     });
     return { filas: filas, formato: p.formato || 'circuito', dia: p.enfoque ? '' : p.dia, enfoque: p.enfoque || '',
-             plan: { dia: p.enfoque || p.dia, bloque: p.bloque, sesionBloque: p.sesionBloque, propuesta: p.id, fase: p.fase, sombra: !!p.sombra, rpeObjetivo: p.rpeObjetivo } };
+             plan: { dia: p.enfoque || p.dia, bloque: p.bloque, sesionBloque: p.sesionBloque, propuesta: p.id, fase: p.fase, sombra: !!p.sombra, rpeObjetivo: p.rpeObjetivo,
+                     formato: p.formato || '', bloques: esDens(p.formato) ? p.bloques || [] : [], aCriterio: !!p.aCriterio, fueraDeBase: p.fueraDeBase || [] } };
   }
   // Preguntas del planificador para las visitas de hoy de quien ya planifica Carena (cuentan en Pendientes)
   function preguntasPlanHoy() {
@@ -1449,7 +1623,7 @@ var App = (function () {
     var rondas = v.rondas !== '' && v.rondas !== null && v.rondas !== undefined ? v.rondas : p.rondas;
     if (v.dosis) partes.push('<b>' + esc(v.dosis) + '</b>');
     if (v.carga) partes.push(esc(v.carga));
-    return (rondas !== '' && rondas !== null && rondas !== undefined && Number(rondas) > 0 ? rondas + '× ' : '') + partes.join(' · ');
+    return (!f.grupo && rondas !== '' && rondas !== null && rondas !== undefined && Number(rondas) > 0 ? rondas + '× ' : '') + partes.join(' · ');
   }
   var CLS_BLOQUE = { 'calentamiento': 'cal', 'principal': 'pp', 'vuelta a la calma': 'vc' };
   function pintarSesion() {
@@ -1474,8 +1648,15 @@ var App = (function () {
       ['calentamiento', 'principal', 'vuelta a la calma'].forEach(function (b) {
         var fs = []; p.filas.forEach(function (f, i) { if (f.bloque === b) fs.push([f, i]); });
         if (!fs.length) return;
-        cuerpo.push('<div class="bloque ' + CLS_BLOQUE[b] + '">' + b + '</div>');
-        fs.forEach(function (x) { cuerpo.push(htmlFila(cid, x[0], x[1])); });
+        var bq = b === 'principal' && p.plan && esDens(p.formato) && (p.plan.bloques || []).length ? p.plan.bloques : null;
+        cuerpo.push('<div class="bloque ' + CLS_BLOQUE[b] + '">' + b + (bq ? ' · ' + esc(nombreFmt(p.formato)) + (p.plan.aCriterio ? ' · parámetros a tu criterio' : '') : '') + '</div>');
+        if (!bq) { fs.forEach(function (x) { cuerpo.push(htmlFila(cid, x[0], x[1])); }); return; }
+        bq.forEach(function (B) {
+          var de = fs.filter(function (x) { return String(x[0].grupo) === String(B.n); }); if (!de.length) return;
+          cuerpo.push(htmlCabBloque(cid, B)); de.forEach(function (x) { cuerpo.push(htmlFila(cid, x[0], x[1])); }); cuerpo.push(htmlResBloque(cid, p, B));
+        });
+        var sueltas = fs.filter(function (x) { return !bq.some(function (B) { return String(B.n) === String(x[0].grupo); }); });
+        if (sueltas.length) { cuerpo.push('<div class="fbloque"><div><b>Fuera de los bloques</b></div></div>'); sueltas.forEach(function (x) { cuerpo.push(htmlFila(cid, x[0], x[1])); }); }
       });
       cuerpo.push('<div style="padding:10px 12px;border-top:1px solid var(--piedra-cl)"><button class="btn mini" onclick="App.anadir(\'' + cid + '\')">' + ico('mas') + 'Añadir ejercicio</button></div>');
       h.push('<section class="col-cli">' + cab + cuerpo.join('') + '</section>');
@@ -1484,6 +1665,38 @@ var App = (function () {
     $('main').innerHTML = h.join('');
     document.documentElement.style.setProperty('--alto-barra', $('barra').offsetHeight + 'px');
     S.pulso = null;
+  }
+  function htmlCabBloque(cid, B) {
+    var t = textoBloque(B);
+    return '<div class="fbloque"><div><b>Bloque ' + B.n + ' · ' + esc(t.t) + '</b><div class="sub">' + esc(t.d) + (B.descansoTras ? ' · después, ' + B.descansoTras + ' min de descanso' : '') + '</div></div>' +
+      '<button class="btn mini" onclick="App.cronoBloque(\'' + cid + '\',' + B.n + ')">' + ico('crono') + 'Cronómetro</button></div>';
+  }
+  /** Lo que se apunta de cada bloque: depende del formato. */
+  function htmlResBloque(cid, p, B) {
+    var r = (p.resultado || {})[B.n] || {}, N = 'type="number" inputmode="numeric" min="0"', x = [];
+    var inp = function (campo, tit, attrs, val) { return '<label class="par"><small>' + tit + '</small><input ' + attrs + ' value="' + (val === undefined || val === null ? '' : esc(String(val))) + '" onchange="App.resFmt(\'' + cid + '\',' + B.n + ',\'' + campo + '\',this.value)"></label>'; };
+    if (B.formato === 'emom') x.push(inp('minutos', 'Minutos completos (de ' + fmtNum(B.duracion) + ')', N + ' max="' + Math.ceil(B.duracion) + '"', r.minutos));
+    else if (B.formato === 'amrap') { x.push(inp('rondas', 'Rondas completas', N, r.rondas)); x.push(inp('reps', 'Más repeticiones sueltas', N, r.reps)); }
+    else if (B.formato === 'for time') {
+      if (!r.limite) x.push(inp('tiempo', 'Tiempo (mm:ss)', 'type="text" inputmode="numeric" placeholder="mm:ss"', r.tiempo));
+      x.push('<label class="par chk"><input type="checkbox"' + (r.limite ? ' checked' : '') + ' onchange="App.resFmt(\'' + cid + '\',' + B.n + ',\'limite\',this.checked)"><span>Llegó al límite</span></label>');
+      if (r.limite) x.push(inp('rondas', 'Rondas hechas (de ' + B.rondas + ')', N + ' max="' + B.rondas + '"', r.rondas));
+    }
+    else if (B.formato === 'intervalos') x.push(inp('rondas', 'Vueltas completas (de ' + B.rondas + ')', N + ' max="' + B.rondas + '"', r.rondas));
+    return '<div class="fres"><small>Resultado del bloque ' + B.n + '</small><div class="par-rej">' + x.join('') + '</div></div>';
+  }
+  function resFmt(cid, n, campo, v) {
+    var p = S.reg && S.reg.por[cid]; if (!p) return;
+    p.resultado = p.resultado || {}; var o = p.resultado[n] = p.resultado[n] || {};
+    if (campo === 'limite') { o.limite = !!v; if (o.limite) delete o.tiempo; else delete o.rondas; guardarReg(); pintarSesion(); return; }
+    if (campo === 'tiempo') {
+      var t = String(v || '').trim(), m = /^(\d{1,3}):([0-5]\d)$/.exec(t) || (/^\d{3,4}$/.test(t) ? /^(\d{1,2})(\d\d)$/.exec(t) : null);
+      if (t && (!m || Number(m[2]) > 59)) { toast('El tiempo, como minutos:segundos (12:34)'); delete o.tiempo; guardarReg(); pintarSesion(); return; }
+      if (t) o.tiempo = Number(m[1]) + ':' + m[2]; else delete o.tiempo;
+      guardarReg(); pintarSesion(); return;
+    }
+    var x = num(v); if (x === null || x < 0) delete o[campo]; else o[campo] = Math.round(x);
+    guardarReg();
   }
   function avisosCabecera(cid) {
     var out = [], lc = limitesCarga(cid);
@@ -1707,12 +1920,25 @@ var App = (function () {
     S.reg = null; guardarReg(); cerrarModal(); S.vista = 'hoy'; pintar(); window.scrollTo(0, 0); animar('an-atr'); celebrar(r.clientes.length > 1 ? 'Sesiones cerradas' : 'Sesión cerrada');
     toast('Sesión cerrada · ' + seg + ' s de registro' + (S.cola.length ? ' · se sube en cuanto haya red' : ''));
   }
+  /** Densidad: las rondas que cuentan de cada bloque salen de su resultado (sin resultado: las previstas; AMRAP sin apuntar: sin rondas). */
+  function rondasBloques(p) {
+    var out = {};
+    ((p.plan && esDens(p.formato) && p.plan.bloques) || []).forEach(function (B) {
+      var r = (p.resultado || {})[B.n] || {}, n = (B.huecos || []).length || 1, x = num(r.rondas), m = num(r.minutos);
+      out[B.n] = B.formato === 'emom' ? (m !== null ? Math.floor(m / n) : B.rondas) : B.formato === 'amrap' ? x : B.formato === 'for time' ? (r.limite && x !== null ? x : B.rondas) : (x !== null ? x : B.rondas);
+    });
+    return out;
+  }
+  function resultadoFormato(p) {
+    var bq = (p.plan && esDens(p.formato) && p.plan.bloques) || []; if (!bq.length) return null;
+    return { formato: p.formato, bloques: bq.map(function (B) { var r = (p.resultado || {})[B.n] || {}; return Object.assign({ n: B.n, formato: B.formato, plan: textoBloque(B).t }, r); }) };
+  }
   function construir(cid, p, fin) {
-    var r = S.reg, avisos = [], filas = [];
+    var r = S.reg, avisos = [], filas = [], rg = rondasBloques(p);
     p.filas.forEach(function (f) {
       var v = f.val, pr = f.pres, hecha = f.estado !== 'quitada' && f.estado !== 'prescrita';
       if (f.nueva && !hecha && !f.carena) return;            // lo propuesto por Carena y no hecho se guarda como «quitada»: de ahí aprende
-      var rondas = v.rondas !== '' && v.rondas !== null && v.rondas !== undefined ? Number(v.rondas) : num(pr.rondas);
+      var rondas = f.grupo && rg[f.grupo] !== undefined ? rg[f.grupo] : v.rondas !== '' && v.rondas !== null && v.rondas !== undefined ? Number(v.rondas) : num(pr.rondas);
       var igual = f.estado === 'hecha' && !f.nueva;
       var texto = function (n) { if (!hecha || n > (rondas || 0)) return ''; if (igual) return pr['r' + n] || [v.dosis, v.carga].filter(Boolean).join(' · '); return [v.dosis, v.carga].filter(Boolean).join(' · '); };
       var o = { id: f.id, nueva: f.nueva, cambiaEjercicio: !f.nueva && v.ejercicio !== f.ejercicio, ejercicio: v.ejercicio, texto: (I.E[v.ejercicio] || {}).nombre || f.texto,
@@ -1731,6 +1957,8 @@ var App = (function () {
     if (t !== null && num(p.rpe) !== null && num(p.rpe) > t) avisos.push({ tipo: 'RPE por encima del techo', valor: fmtNum(p.rpe), limite: fmtNum(t), motivo: p.motivoRpe });
     var ses = { id: p.sesion, cliente: cid, fecha: r.dia, inicio: r.inicio, fin: fin, segundos: Math.round(r.activo / 1000), rpe: p.rpe === null ? '' : p.rpe,
                 motivoRpe: p.motivoRpe, notas: p.notas, formato: p.formato, nueva: p.nueva };
+    var rf = resultadoFormato(p); if (rf) ses.resultado = rf;
+    if (p.plan && p.plan.aCriterio) ses.aCriterio = true;
     if (p.plan) { ses.plan = { dia: p.plan.dia, bloque: p.plan.bloque, sesionBloque: p.plan.sesionBloque, propuesta: p.plan.propuesta, fase: p.plan.fase };
                   if (p.notaJ !== null && p.notaJ !== undefined) { ses.nota = p.notaJ; ses.etiquetas = (p.etq || []).join(', '); } }
     return { sesion: ses, filas: filas, avisos: avisos };
@@ -2643,12 +2871,12 @@ var App = (function () {
   }
 
   // ---------- Cronómetro e intervalos (herramienta de pantalla: no guarda ni envía nada a Carena) ----------
-  var CR = { modo: 'int', trabajo: 40, descanso: 20, rondas: 8, corre: false, t0: 0, acum: 0, abierto: false, min: false, tic: null, ult: '', audio: null, leido: false };
+  var CR = { modo: 'int', trabajo: 40, descanso: 20, rondas: 8, corre: false, t0: 0, acum: 0, abierto: false, min: false, tic: null, ult: '', audio: null, leido: false, tipo: '', titulo: '', limite: 0, bloque: null };
   function crMs() { return CR.acum + (CR.corre ? Date.now() - CR.t0 : 0); }
   function crTotal() { return CR.rondas * (CR.trabajo + CR.descanso) - CR.descanso; }
   function crEstado() {
     var s = crMs() / 1000;
-    if (CR.modo === 'libre') return { fase: 'libre', seg: s, frac: (s % 60) / 60, sube: true };
+    if (CR.modo === 'libre') { if (CR.limite && s >= CR.limite) return { fase: 'fin', seg: CR.limite, frac: 1, sube: true }; return { fase: 'libre', seg: s, frac: CR.limite ? s / CR.limite : (s % 60) / 60, sube: true }; }
     var ciclo = CR.trabajo + CR.descanso;
     if (s >= crTotal()) return { fase: 'fin', seg: 0, ronda: CR.rondas, frac: 1 };
     var k = Math.floor(s / ciclo), en = s - k * ciclo;
@@ -2679,9 +2907,10 @@ var App = (function () {
       d.innerHTML = '<div class="cr-cab"><div class="cr-seg"><button class="' + (int ? 'on' : '') + '" onclick="App.cronoModo(\'int\')">Intervalos</button><button class="' + (int ? '' : 'on') + '" onclick="App.cronoModo(\'libre\')">Cronómetro</button></div>' +
         '<button class="cr-x" onclick="App.cronoMin()" aria-label="Minimizar el cronómetro">' + ico('menos') + '</button><button class="cr-x" onclick="App.crono()" aria-label="Cerrar el cronómetro">' + ico('x') + '</button></div>' +
         '<div class="cr-cuerpo"><svg viewBox="0 0 176 176" aria-hidden="true"><circle cx="88" cy="88" r="80"/><circle class="a" id="cr-anillo" cx="88" cy="88" r="80" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg><div class="cr-num" id="cr-num" role="timer"></div><div class="cr-fase" id="cr-fase"></div></div>' +
-        (int && parado ? '<div class="cr-cfg">' + paso('trabajo', 'Trabajo', CR.trabajo, ' s') + paso('descanso', 'Descanso', CR.descanso, ' s') + paso('rondas', 'Rondas', CR.rondas, '') + '</div>' +
+        (CR.titulo ? '<div class="cr-tit">' + esc(CR.titulo) + '</div>' : '') +
+        (int && parado && !CR.tipo ? '<div class="cr-cfg">' + paso('trabajo', 'Trabajo', CR.trabajo, ' s') + paso('descanso', 'Descanso', CR.descanso, ' s') + paso('rondas', 'Rondas', CR.rondas, '') + '</div>' +
           '<div class="cr-pre">' + [[30, 30], [40, 20], [45, 15], [60, 30]].map(function (p) { return '<button onclick="App.cronoPre(' + p[0] + ',' + p[1] + ')" aria-label="' + p[0] + ' segundos de trabajo y ' + p[1] + ' de descanso">' + p[0] + ' / ' + p[1] + '</button>'; }).join('') + '</div>' : '') +
-        '<div class="cr-pie">' + (parado ? '' : '<button class="btn" onclick="App.cronoCero()">Reiniciar</button>') + '<button class="btn pri" onclick="App.cronoIr()">' + ico(CR.corre ? 'pausa' : 'play') + (CR.corre ? 'Pausar' : parado ? 'Empezar' : 'Seguir') + '</button></div>';
+        '<div class="cr-pie">' + (parado ? '' : '<button class="btn" onclick="App.cronoCero()">Reiniciar</button>') + (CR.tipo === 'for time' && CR.bloque && !CR.corre && !parado ? '<button class="btn" onclick="App.cronoApuntar()">Apuntar</button>' : '') + '<button class="btn pri" onclick="App.cronoIr()">' + ico(CR.corre ? 'pausa' : 'play') + (CR.corre ? 'Pausar' : parado ? 'Empezar' : 'Seguir') + '</button></div>';
     }
     d.setAttribute('data-min', CR.min ? '1' : ''); CR.ult = ''; crTic();
     if (!CR.tic) CR.tic = setInterval(crTic, 200);
@@ -2692,8 +2921,10 @@ var App = (function () {
     if (e.fase === 'fin' && CR.corre) { CR.acum = crMs(); CR.corre = false; crPitido(1320, 180); crPitido(1320, 180, 0.28); crPitido(1760, 520, 0.56); despierta(S.vista === 'sesion'); crPintar(); return; }
     var num = $('cr-num'), fase = $('cr-fase'), an = $('cr-anillo');
     if (num) num.textContent = e.fase === 'fin' ? 'Fin' : crReloj(e.seg, e.sube);
-    var txt = e.fase === 'libre' ? (CR.corre ? 'En marcha' : parado ? 'Listo' : 'En pausa') : e.fase === 'fin' ? CR.rondas + (CR.rondas === 1 ? ' ronda hecha' : ' rondas hechas')
-      : parado ? CR.rondas + (CR.rondas === 1 ? ' ronda' : ' rondas') + ' · ' + crReloj(crTotal()) + ' en total' : '<b>' + (e.fase === 'trabajo' ? 'Trabajo' : 'Descanso') + '</b> · ronda ' + e.ronda + ' de ' + CR.rondas;
+    var T = CR.tipo, txt = e.fase === 'libre' ? (T === 'for time' ? 'Límite ' + crReloj(CR.limite) + ' · ' : '') + (CR.corre ? 'En marcha' : parado ? 'Listo' : 'En pausa')
+      : e.fase === 'fin' ? (T === 'for time' ? 'Límite alcanzado' : T === 'amrap' ? 'Tiempo' : T === 'emom' ? 'EMOM terminado' : CR.rondas + (T === 'intervalos' ? (CR.rondas === 1 ? ' intervalo hecho' : ' intervalos hechos') : CR.rondas === 1 ? ' ronda hecha' : ' rondas hechas'))
+      : parado ? (T === 'amrap' ? 'AMRAP de ' + crReloj(crTotal()) : T === 'emom' ? CR.rondas + ' minutos' : CR.rondas + (T === 'intervalos' ? ' intervalos' : CR.rondas === 1 ? ' ronda' : ' rondas') + ' · ' + crReloj(crTotal()) + ' en total')
+      : T === 'emom' ? '<b>Minuto ' + e.ronda + '</b> de ' + CR.rondas : T === 'amrap' ? '<b>AMRAP</b> · quedan' : '<b>' + (e.fase === 'trabajo' ? 'Trabajo' : 'Descanso') + '</b> · ' + (T === 'intervalos' ? 'intervalo ' : 'ronda ') + e.ronda + ' de ' + CR.rondas;
     if (fase && fase.innerHTML !== txt) fase.innerHTML = txt;
     if (an) an.setAttribute('stroke-dashoffset', String(Math.round((100 - 100 * (parado ? 0 : e.frac)) * 10) / 10));
     d.className = 'crono' + (CR.min ? ' min' : '') + (parado ? '' : ' f-' + e.fase) + (d.classList.contains('cambio') ? ' cambio' : '');
@@ -2703,6 +2934,7 @@ var App = (function () {
       else if (seg >= 1 && seg <= 3 && CR.ult !== clave + '#' + seg) crPitido(880, 110);
       CR.ult = clave + '#' + seg;
     }
+    if (CR.corre && CR.modo === 'libre' && CR.limite) { var qd = Math.ceil(CR.limite - e.seg); if (qd >= 1 && qd <= 3 && CR.ult !== 'lim#' + qd) { crPitido(880, 110); CR.ult = 'lim#' + qd; } }
   }
   function crono() {
     CR.abierto = !CR.abierto; CR.min = false;
@@ -2712,11 +2944,34 @@ var App = (function () {
   }
   function cronoIr() {
     if (CR.corre) { CR.acum = crMs(); CR.corre = false; }
-    else { if (CR.modo === 'int' && crEstado().fase === 'fin') CR.acum = 0; var cero = CR.acum === 0; CR.t0 = Date.now(); CR.corre = true; crPitido(cero && CR.modo === 'int' ? 1320 : 990, cero ? 300 : 90); }
+    else { if (crEstado().fase === 'fin') CR.acum = 0; var cero = CR.acum === 0; CR.t0 = Date.now(); CR.corre = true; crPitido(cero && CR.modo === 'int' ? 1320 : 990, cero ? 300 : 90); }
     despierta(S.vista === 'sesion' || CR.corre); crPintar();
   }
   function cronoCero() { CR.acum = 0; CR.corre = false; despierta(S.vista === 'sesion'); crPintar(); }
-  function cronoModo(m) { if (CR.modo === m) return; CR.modo = m; CR.acum = 0; CR.corre = false; crGuardar(); crPintar(); }
+  function cronoModo(m) {
+    if (CR.modo === m && !CR.tipo) return;
+    if (CR.tipo) { var c = leer('carena.crono.v1', null) || {}; CR.trabajo = Number(c.trabajo) || 40; CR.descanso = c.descanso === 0 ? 0 : (Number(c.descanso) || 20); CR.rondas = Number(c.rondas) || 8; CR.tipo = ''; CR.titulo = ''; CR.limite = 0; CR.bloque = null; }
+    CR.modo = m; CR.acum = 0; CR.corre = false; crGuardar(); crPintar();
+  }
+  /** El cronómetro preparado para un bloque: EMOM = un pitido cada minuto; AMRAP = cuenta atrás; FOR TIME = sube hasta el límite; intervalos = trabajo/descanso por ejercicio. */
+  function cronoBloque(cid, n) {
+    var p = S.reg && S.reg.por[cid], B = p && ((p.plan || {}).bloques || []).filter(function (b) { return b.n === n; })[0]; if (!B) return;
+    CR.leido = true;                                                       // los preajustes no se guardan: «Intervalos»/«Cronómetro» vuelve a lo tuyo
+    CR.corre = false; CR.acum = 0; CR.min = false; CR.abierto = true; CR.bloque = { cid: cid, n: n }; CR.tipo = B.formato; CR.limite = 0; CR.ult = '';
+    if (B.formato === 'emom') { CR.modo = 'int'; CR.trabajo = 60; CR.descanso = 0; CR.rondas = Math.max(1, Math.round(B.duracion)); }
+    else if (B.formato === 'amrap') { CR.modo = 'int'; CR.trabajo = Math.round(B.duracion * 60); CR.descanso = 0; CR.rondas = 1; }
+    else if (B.formato === 'for time') { CR.modo = 'libre'; CR.limite = Math.round(B.limite * 60); }
+    else { CR.modo = 'int'; CR.trabajo = B.trabajo; CR.descanso = B.descanso; CR.rondas = Math.max(1, (B.huecos || []).length * B.rondas); }
+    CR.titulo = 'Bloque ' + n + ' · ' + textoBloque(B).t;
+    despierta(true); crPintar();
+  }
+  /** FOR TIME: apunta en el bloque el tiempo parado (o que llegó al límite). */
+  function cronoApuntar() {
+    var b = CR.bloque, p = b && S.reg && S.reg.por[b.cid]; if (!p) return;
+    var s = crMs() / 1000; p.resultado = p.resultado || {}; var o = p.resultado[b.n] = p.resultado[b.n] || {};
+    if (CR.limite && s >= CR.limite) { o.limite = true; delete o.tiempo; } else { o.limite = false; o.tiempo = crReloj(s, true); }
+    guardarReg(); pintarSesion(); toast(o.limite ? 'Apuntado: llegó al límite (pon las rondas)' : 'Tiempo apuntado: ' + o.tiempo);
+  }
   function cronoMas(campo, n) {
     if (campo === 'rondas') CR.rondas = Math.max(1, Math.min(60, CR.rondas + n));
     else if (campo === 'trabajo') CR.trabajo = Math.max(5, Math.min(900, CR.trabajo + n * 5));
@@ -2777,7 +3032,7 @@ var App = (function () {
            valSet: valSet, valFila: valFila, valQuitar: valQuitar, valDescartar: valDescartar, valAnadir: valAnadir, valFiltrar: valFiltrar, valElegir: valElegir, guardarValoracion: guardarValoracion,
            documento: documento, docArchivo: docArchivo, guardarDocumento: guardarDocumento, editarCliente: editarCliente, guardarCliente: guardarCliente,
            guardarAlta: guardarAlta, nuevaAlta: nuevaAlta, invitar: invitar, crearInvitacion: crearInvitacion, copiarEnlace: copiarEnlace, pedirFirma: pedirFirma, firmaTodos: firmaTodos, firmaTodosOk: firmaTodosOk,
-           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, verProp: verProp, cerrarProp: cerrarProp, propEd: propEd, propSeguridad: propSeguridad, empezarCarena: empezarCarena, plResp: plResp, pedirProp: pedirProp, propEnfoque: propEnfoque, propEnSesion: propEnSesion,
+           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, verProp: verProp, cerrarProp: cerrarProp, propEd: propEd, propSeguridad: propSeguridad, empezarCarena: empezarCarena, plResp: plResp, pedirProp: pedirProp, propEnfoque: propEnfoque, propFormato: propFormato, propParam: propParam, confFuera: confFuera, encargar: encargar, encFormato: encFormato, cerrarEncargo: cerrarEncargo, guardarEncargo: guardarEncargo, cronoBloque: cronoBloque, cronoApuntar: cronoApuntar, resFmt: resFmt, propEnSesion: propEnSesion,
            abrirTolerar: abrirTolerar, tolerarListo: tolerarListo, guardarTolerar: guardarTolerar, editarPlan: editarPlan, planListo: planListo, guardarPlan: guardarPlan, setNotaJ: setNotaJ, setEtq: setEtq,
            guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, _S: S, _I: function () { return I; } };
 })();

@@ -469,7 +469,7 @@ var App = (function () {
   var I = {};
   var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var VERSION = '0.10.0', T0 = Date.now();
+  var VERSION = '0.10.1', T0 = Date.now();
 
   // ---------- Utilidades ----------
   var memoria = {};
@@ -1549,20 +1549,24 @@ var App = (function () {
     var g = r.por[otro].filas.filter(function (x) { return x.val.ejercicio && x.val.ejercicio === f.val.ejercicio && x.bloque === f.bloque; })[0];
     return g ? { cid: otro, f: g } : null;
   }
+  // Tocar la fila marca o desmarca, también si la cambiaste o la añadiste: al desmarcar se guarda cómo estaba (lo apuntado no se pierde)
+  // y al volver a marcarla vuelve igual. Para cambiar lo apuntado está el lápiz.
+  var HECHA = { 'hecha': 1, 'cambiada': 1, 'añadida': 1 };
   function marcar(cid, i) {
-    toque(); var f = filaDe(cid, i);
-    var pon = f.estado === 'prescrita' || f.estado === 'quitada' ? 'hecha' : f.estado === 'hecha' ? 'prescrita' : f.estado;
-    if (f.estado === 'cambiada' || f.estado === 'añadida') { abrirCambio(cid, i); return; }
+    toque(); var f = filaDe(cid, i), desmarca = !!HECHA[f.estado];
     var aplicar = function (ff, c) {
-      if (pon === 'hecha' && esDescartado(c, ff.val.ejercicio) && !ff.val.motivoDescartado) {
-        pedirTexto('Motivo', 'Este ejercicio está descartado para ' + nombreCorto(c) + '. ¿Por qué lo hace hoy?', '', true, function (m) { ff.val.motivoDescartado = m; ff.estado = 'hecha'; guardarReg(); pintarSesion(); });
+      if (desmarca) { if (!HECHA[ff.estado]) return true; ff.hechaComo = ff.estado; ff.estado = 'prescrita'; return true; }
+      if (HECHA[ff.estado]) return true;
+      var pon = ff.hechaComo || 'hecha';
+      if (esDescartado(c, ff.val.ejercicio) && !ff.val.motivoDescartado) {
+        pedirTexto('Motivo', 'Este ejercicio está descartado para ' + nombreCorto(c) + '. ¿Por qué lo hace hoy?', '', true, function (m) { ff.val.motivoDescartado = m; ff.estado = pon; ff.hechaComo = ''; guardarReg(); pintarSesion(); });
         return false;
       }
-      ff.estado = pon; return true;
+      ff.estado = pon; ff.hechaComo = ''; return true;
     };
     var ok = aplicar(f, cid), g = gemela(cid, f);
     if (ok && g) aplicar(g.f, g.cid);
-    if (ok && pon === 'hecha') { S.pulso = {}; S.pulso[cid + '|' + i] = 1; if (g) S.pulso[g.cid + '|' + S.reg.por[g.cid].filas.indexOf(g.f)] = 1; }
+    if (ok && !desmarca) { S.pulso = {}; S.pulso[cid + '|' + i] = 1; if (g) S.pulso[g.cid + '|' + S.reg.por[g.cid].filas.indexOf(g.f)] = 1; }
     guardarReg(); pintarSesion();
   }
   function quitar(cid, i) {
@@ -1983,7 +1987,7 @@ var App = (function () {
             porCli[cid].map(function (x) { return '<div class="preg"><div><span class="chip ' + (/molestia|descartado|RPE|límite/.test(x.tipo) ? 'r' : 'a') + '">' + esc(x.tipo) + '</span> <b>' + esc(x.valor) + '</b>' + (x.limite ? ' <span class="sub">· límite: ' + esc(x.limite) + '</span>' : '') + '<div class="sub">' + fechaMedia(x.fecha) + (x.motivo ? ' · motivo: ' + esc(x.motivo) : ' · sin motivo') + '</div></div><button class="btn mini" onclick="App.revisarAviso(\'' + x.id + '\')">Revisado</button></div>'; }).join('') + '</div>';
         }).join('') + '</div>');
     }
-    if (a.val.length) h.push('<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('regla') + 'Valoraciones que tocan hoy · ' + a.val.length + '</div><div class="sub">Tienen visita hoy. Toca a las 13 semanas con sesión desde la última, o a los 6 meses (Conocimiento, sección 8).</div>' +
+    if (a.val.length) h.push('<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('regla') + 'Valoraciones que tocan hoy · ' + a.val.length + '</div><div class="sub">Tienen visita hoy. La obligatoria es la de 6 meses (o la primera, si no tiene ninguna); adelantarla es criterio tuyo.</div>' +
       a.val.map(function (c) { return '<div class="preg"><div><b>' + esc(c.nombre) + '</b><div class="sub">' + esc(tocaValorar(c.id)) + '</div></div><button class="btn mini" onclick="App.ir(\'valoracion\',\'' + c.id + '\')">' + ico('regla') + 'Valorar</button></div>'; }).join('') + '</div>');
     h.push('<h3 class="sec">Cuando puedas</h3>');
     // Cada bloque: título con su número, una línea de para qué, la acción en bloque si la hay y como mucho 5 filas a la vista

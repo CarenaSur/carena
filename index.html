@@ -474,7 +474,7 @@ label.casilla>span{flex:1;min-width:0;line-height:1.35}
 /* Carena · app instalable. Sustituye a google.script.run: las mismas llamadas viajan por HTTPS a la puerta de Carena
    con la llave de este dispositivo. Sin llave, pide el código de vincular. La llave no sale nunca en una dirección. */
 (function () {
-  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.8.0';
+  var API = 'https://script.google.com/macros/s/AKfycbxtLs2MiSr52HQPnSsGSvvdAmWpP6Dtfc5g6NQlk-DboxpCTOpl31e71q6lfHcmJ_KL/exec', KT = 'carena.llave.v1', KN = 'carena.dispositivo.v1', VERSION = '0.10.0';
   function leer(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function poner(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
   function pedir(cuerpo) {
@@ -587,7 +587,7 @@ var App = (function () {
   var I = {};
   var DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  var VERSION = '0.8.0', T0 = Date.now();
+  var VERSION = '0.10.0', T0 = Date.now();
 
   // ---------- Utilidades ----------
   var memoria = {};
@@ -807,6 +807,12 @@ var App = (function () {
       var pp = s.planificador && s.planificador.propuestas ? s.planificador.propuestas[d.cliente] : null;
       if (pp && 'Planifica' in d.campos) pp.sombra = d.campos['Planifica'] !== 'Carena';
     }
+    else if (op.tipo === 'fijar') {                         // B5: la fijada se ve ya en la ficha; la propuesta la rehace el servidor
+      var pf = s.planificador; if (!pf) return;
+      pf.fijadas = pf.fijadas || {}; var lf = pf.fijadas[d.cliente] = (pf.fijadas[d.cliente] || []);
+      if (d.accion === 'soltar') pf.fijadas[d.cliente] = lf.filter(function (x) { return x.id !== d.id; });
+      else { var fid = 'FIJ-' + d.cliente + '-' + String(d.para).replace(/^ENF_/, ''); pf.fijadas[d.cliente] = lf.filter(function (x) { return x.id !== fid; }).concat([{ id: fid, para: d.para, desde: hoyIso(), hasta: d.hasta || '', origen: d.origen, referencia: d.referencia, motivo: d.motivo || '', ejercicios: (d.filas || []).filter(function (f) { return (f.bloque || 'principal') === 'principal'; }).length }]); }
+    }
     else if (op.tipo === 'encargo') {
       var pe = s.planificador; if (!pe || !pe.propuestas) return;
       pe.encargos = pe.encargos || {}; var ke = d.cliente + '|' + d.fecha;
@@ -817,10 +823,18 @@ var App = (function () {
     else if (op.tipo === 'valoracion') {
       var v = s.valoraciones[d.cliente] = s.valoraciones[d.cliente] || { anteriores: [], semanas: 0 };
       if (!v.ultima || v.ultima.id !== 'local-' + op.id) { if (v.ultima) v.anteriores = [v.ultima].concat(v.anteriores || []).slice(0, 3); v.ultima = { id: 'local-' + op.id, fecha: d.fecha, tipo: d.tipo, protocolo: d.protocolo, resultados: d.resultados.filter(function (r) { return num(r.valor) !== null; }).map(function (r) { return { test: r.test, texto: r.texto, lado: r.lado, valor: num(r.valor), unidad: r.unidad, valido: r.valido !== false, fecha: d.fecha }; }) }; }
-      v.toca = ''; v.semanas = 0;
+      v.toca = ''; v.sugiere = ''; v.semanas = 0;
+      var rv = d.revision;                                   // B2: la revisión de condiciones se ve ya, antes de que el servidor la confirme
+      if (rv) {
+        (rv.condiciones || []).forEach(function (x) { var c = s.condiciones.filter(function (y) { return y.id === x.id; })[0]; if (!c) return; c.revisada = d.fecha;
+          if (x.accion === 'quitar') c.estado = c.estado === 'por confirmar' ? 'descartada' : 'resuelta'; else if (x.accion === 'etiqueta') c.etiqueta = x.etiqueta; });
+        (rv.nuevas || []).forEach(function (n, k) { var lid = 'local-' + op.id + '-' + k; if (s.condiciones.some(function (y) { return y.id === lid; })) return;
+          s.condiciones.push({ id: lid, cliente: d.cliente, condicion: n.condicion, etiqueta: n.etiqueta, zona: n.zona || '', lado: n.lado || '', estado: n.estado || 'confirmada', fuente: 'Julio', revisada: d.fecha, notas: '' }); });
+      }
     }
     else if (op.tipo === 'catalogo') {
       if (d.accion === 'nuevo') { if (!s.ejercicios.some(function (e) { return e.id === 'local-' + op.id; })) s.ejercicios.push({ id: 'local-' + op.id, nombre: d.nuevo.nombre, patron: d.nuevo.patron, material: d.nuevo.material, tipo: d.nuevo.tipo, estado: 'borrador', usos: 0, local: true }); }
+      else if (d.accion === 'combinado') { if (!s.ejercicios.some(function (e) { return e.id === 'local-' + op.id; })) { var c0 = s.ejercicios.filter(function (e) { return e.id === d.componentes[0]; })[0] || {}; s.ejercicios.push({ id: 'local-' + op.id, nombre: d.nombre, patron: c0.patron || '', tipo: c0.tipo || '', material: '', estado: 'borrador', usos: 0, local: true, componentes: d.componentes.slice() }); } }
       else (d.items || []).forEach(function (it) { var e = s.ejercicios.filter(function (x) { return x.id === it.ID; })[0]; if (!e) return; Object.keys(it.campos).forEach(function (col) { if (MAPA.Ejercicios[col]) e[MAPA.Ejercicios[col]] = it.campos[col]; }); });
     }
     else if (op.tipo === 'cliente') {
@@ -928,14 +942,18 @@ var App = (function () {
   }
 
   // ---------- Planificador: lo que propone Carena para cada visita ----------
-  var CAMPOS_PLAN = { 'Puede ir al suelo': 'suelo', 'Objetivo': 'objetivo', 'Planifica': 'planifica', 'Duración de la visita (min)': 'duracion', 'Ejercicio ancla': 'ancla', 'Material en casa': 'materialCasa' };
+  var CAMPOS_PLAN = { 'Puede ir al suelo': 'suelo', 'Objetivo': 'objetivo', 'Planifica': 'planifica', 'Duración de la visita (min)': 'duracion', 'Ejercicio ancla': 'ancla', 'Material en casa': 'materialCasa', 'Servicio': 'servicio', 'Orientación': 'orientacion' };
+  // S1: orientación del cliente (decide cada cuántas sesiones entra la potencia o la fuerza con cardio final) y servicio
+  var ORIENTA = [['fuerza', 'Fuerza (1 de cada 6, potencia)'], ['potencia', 'Potencia (1 de cada 4)'], ['grasa', 'Pérdida de grasa o cardio (1 de cada 2, fuerza con cardio final)'], ['mantener', 'Mantener (sin subidas)'], ['salud', 'Salud general (como hoy)']];
+  function esOnline(cid) { return ((I.C[cid] || {}).servicio || '') === 'online'; }
+  function chipS1(p) { var c = []; if (p.porOrientacion) c.push('<span class="chip z">' + esc(p.porOrientacion) + '</span>'); if (p.criterio) c.push('<span class="chip o">a tu criterio: «' + esc(p.criterio) + '»</span>'); return c.join(''); }
   var RANGO_SUELO = { '': 0, 'no': 0, 'con ayuda': 1, 'sí': 2 };
   var ETQ_SESION = ['fluida', 'justa de tiempo', 'sobró tiempo', 'demasiado fácil', 'demasiado dura', 'faltó material', 'cliente con mal día'];
   function PLN() { var p = S.snap && S.snap.planificador; return p && p.propuestas ? p : { propuestas: {}, enfoques: [], hallazgos: {} }; }
   function propDe(cid, dia) { var p = PLN().propuestas[cid]; return p && p.fecha === dia ? p : null; }
   function conCarena(cid) { return (I.C[cid] || {}).planifica === 'Carena'; }
   function pregDe(p, clase, tipo) { return ((p && p.preguntas) || []).filter(function (q) { return q.clase === clase && q.tipo === tipo; })[0] || null; }
-  function nombreEnfoque(id) { if (id === 'ENF_CCE') return 'Cuerpo completo equilibrado'; var e = (PLN().enfoques || []).filter(function (x) { return x.id === id; })[0]; return e ? e.nombre : id; }
+  function nombreEnfoque(id) { if (id === 'ENF_CCE') return 'Cuerpo completo equilibrado'; if (id === 'ENF_DIA') return 'El día que toca, sin la orientación'; var e = (PLN().enfoques || []).filter(function (x) { return x.id === id; })[0]; return e ? e.nombre : id; }
   function ediciones(pid) { return leer(K.ped, {})[pid] || {}; }
   function editar(pid, hueco, e) {
     var t = leer(K.ped, {}), vivas = {}; Object.keys(PLN().propuestas).forEach(function (c) { vivas[PLN().propuestas[c].id] = true; });
@@ -1082,19 +1100,21 @@ var App = (function () {
     var x = S.enc; if (!x) return;
     var e = encargoDe(x.lista, x.dia), enf = PLN().enfoques || [];
     var h = '<h3>Encargo para ' + esc(x.lista.map(nombreCorto).join(' y ')) + '</h3><div class="sub">' + esc(fechaLarga(x.dia)) + ' · lo que pidas aquí manda sobre lo que toca. La seguridad se comprueba igual: si ese día no se puede, Carena te lo dice y propone lo de siempre.</div>' +
-      '<div class="campo"><label for="enc-enf">Enfoque</label><select id="enc-enf">' + opts([['', 'Lo que toca'], ['ENF_CCE', 'Cuerpo completo equilibrado (si ese día cabe)']].concat(enf.map(function (q) { return [q.id, q.nombre]; })), x.enfoque) + '</select></div>' +
+      '<div class="campo"><label for="enc-enf">Enfoque</label><select id="enc-enf" onchange="App.encEnfoque(this.value)">' + opts([['', 'Lo que toca'], ['ENF_DIA', 'El día que toca, sin la orientación'], ['ENF_CCE', 'Cuerpo completo equilibrado (si ese día cabe)']].concat(enf.map(function (q) { return [q.id, q.nombre]; })), x.enfoque) + '</select></div>' +
       '<div class="campo"><label for="enc-fmt">Formato</label><select id="enc-fmt" onchange="App.encFormato(this.value)">' + opts([['', 'El de siempre']].concat(DENS.map(function (f) { return [f, FMT_N[f]]; })), x.formato) + '</select></div>';
     if (esDens(x.formato)) h += '<div class="campo"><label>Parámetros</label>' + htmlParams('enc', x.formato, x.par, {}, null) + '</div>';
-    h += '<div class="campo"><label for="enc-mot">Motivo (opcional; obligatorio si relajas unos intervalos prudentes)</label><input type="text" id="enc-mot" value="' + esc(x.motivo || '') + '"></div>' +
+    if (x.enfoque === 'ENF_FUERZA_CARDIO') h += '<div class="campo"><label for="enc-rem">Cardio final</label><select id="enc-rem">' + opts([['', 'El de su perfil (20/40 prudente, 30/30 el resto)'], ['normal', '30/30'], ['fuerte', '40/20 (duro: con perfil prudente, pide motivo)']], (x.par || {}).remate || '') + '</select></div>';
+    h += '<div class="campo"><label for="enc-mot">Motivo (opcional; obligatorio si relajas unos intervalos prudentes' + (x.enfoque === 'ENF_POTENCIA' ? ' o si encargas potencia a un cliente con criterios prudentes' : '') + ')</label><input type="text" id="enc-mot" value="' + esc(x.motivo || '') + '"></div>' +
       '<div class="pie-modal"><button class="btn" onclick="App.cerrarEncargo()">Cancelar</button>' + (e ? '<button class="btn peligro" onclick="App.guardarEncargo(true)">Quitar el encargo</button>' : '') + '<button class="btn pri" onclick="App.guardarEncargo()">Guardar el encargo</button></div>';
     modal(h);
   }
-  function encLeer() { var x = S.enc; x.enfoque = $('enc-enf').value; x.motivo = $('enc-mot').value.trim(); if (esDens(x.formato)) x.par = leerParams('enc', x.formato); }
+  function encLeer() { var x = S.enc; x.enfoque = $('enc-enf').value; x.motivo = $('enc-mot').value.trim(); if (esDens(x.formato)) x.par = leerParams('enc', x.formato); if ($('enc-rem')) { x.par = Object.assign({}, x.par || {}); if ($('enc-rem').value) x.par.remate = $('enc-rem').value; else delete x.par.remate; } }
+  function encEnfoque(v) { encLeer(); S.enc.enfoque = v; pintarEncargo(); }
   function encFormato(v) { encLeer(); S.enc.formato = v; S.enc.par = {}; pintarEncargo(); }
   function cerrarEncargo() { S.enc = null; cerrarModal(); }
   function guardarEncargo(quitar) {
     var x = S.enc; if (!x) return; encLeer();
-    var par = quitar || !esDens(x.formato) ? {} : x.par, fu = fueraDeTope(par);
+    var par = quitar ? {} : !esDens(x.formato) ? (x.enfoque === 'ENF_FUERZA_CARDIO' && (x.par || {}).remate ? { remate: x.par.remate } : {}) : x.par, fu = fueraDeTope(par);
     if (fu.length) { toast('Fuera de lo posible: ' + fu.join(', ')); return; }
     if (x.motivo && Object.keys(par).length) par.motivo = x.motivo;
     var d = quitar ? { cliente: x.lista[0], fecha: x.dia, enfoque: '', formato: '', parametros: null, motivo: '' }
@@ -1105,6 +1125,7 @@ var App = (function () {
     toast(quitar ? 'Encargo quitado: vuelve a lo que toca' : 'Encargado para el ' + fechaCorta(x.dia));
   }
   function tituloProp(p) { return p.enfoque ? nombreEnfoque(p.enfoque) : 'Día ' + p.dia; }
+  function textoRemate(r) { return r.formato === 'seguido' ? 'suave y seguido, ' + r.trabajo + ' s cada uno · ' + r.rondas + ' vueltas · unos ' + r.minutos + ' min' : 'intervalos ' + r.trabajo + '/' + r.descanso + ' s · ' + r.rondas + ' vueltas · unos ' + r.minutos + ' min'; }
   function abiertas(p) { return ((p && p.preguntas) || []).filter(function (q) { return !q.respuesta; }); }
   /** La línea de Carena dentro de la tarjeta de la visita. */
   function htmlPropLinea(cid, dia, lista) {
@@ -1112,6 +1133,7 @@ var App = (function () {
     var futura = dia > hoyIso() && cid === lista.split(',')[0], enc = encargoDe(lista.split(','), dia);
     var bEnc = futura ? '<button class="btn mini" onclick="App.encargar(\'' + lista + '\',\'' + dia + '\')">' + ico('lapiz') + (enc ? 'Encargo' : 'Encargar') + '</button>' : '';
     var cEnc = enc ? '<span class="chip o">encargo: ' + esc([enc.enfoque ? nombreEnfoque(enc.enfoque) : '', enc.formato ? nombreFmt(enc.formato) : ''].filter(Boolean).join(' · ')) + '</span>' : '';
+    if (esOnline(cid)) return '<div class="prop-linea"><span class="chip">online · sin plan a domicilio</span></div>';
     if (!p) return conCarena(cid) || enc ? '<div class="prop-linea"><span class="sub"><b>Carena</b> · todavía sin propuesta para este día</span> <button class="btn mini" onclick="App.pedirProp(\'' + lista + '\',\'' + dia + '\')">Pedirla</button> ' + bEnc + (cEnc ? '<div class="chips">' + cEnc + '</div>' : '') + '</div>' : '';
     if (p.estado !== 'ok') return '<div class="prop-linea"><span class="chip ' + (p.sombra ? 'a' : 'r') + '">' + ico(p.sombra ? 'alerta' : 'stop') + 'Carena no propone</span> <span class="sub">' + esc(((p.bloqueos || [])[0] || {}).texto || '') +
       '</span> <button class="btn mini" onclick="App.ir(\'seguridad\',\'' + cid + '\')">' + ico('escudo') + 'Seguridad</button></div>';
@@ -1119,22 +1141,25 @@ var App = (function () {
     ch.push(p.sombra ? '<span class="chip">en sombra</span>' : '<span class="chip v">planifica Carena</span>');
     if (esDens(p.formato)) ch.push('<span class="chip z">' + esc(nombreFmt(p.formato)) + (p.aCriterio ? ' · a tu criterio' : '') + '</span>');
     if (p.enfoque === 'ENF_CCE') ch.push('<span class="chip z">cuerpo completo</span>');
+    if (p.enfoque === 'ENF_POTENCIA') ch.push('<span class="chip z">potencia' + (p.potencia && p.potencia.dosisMinima ? ' · dosis mínima' : '') + '</span>');
+    if (p.remate) ch.push('<span class="chip z">cardio final · ' + esc(textoRemate(p.remate)) + '</span>');
+    if (p.porOrientacion) ch.push('<span class="chip">por su orientación</span>');
     if (cEnc) ch.push(cEnc);
     if (ab) ch.push('<span class="chip a">' + ab + (ab === 1 ? ' pregunta' : ' preguntas') + '</span>');
     if (p.filas.some(function (f) { return f.enPrueba && !f.quitada; })) ch.push('<span class="chip a">' + ico('alerta') + '1 en prueba</span>');
     if (vac) ch.push('<span class="chip a">' + vac + (vac === 1 ? ' hueco vacío' : ' huecos vacíos') + '</span>');
     return '<div class="prop-linea"><div class="sub"><b>Carena</b> · ' + esc(tituloProp(p)) + ' · ' + esc(p.fase) + (p.bloque ? ' · bloque ' + p.bloque + ', sesión ' + p.sesionBloque + ' de 8' : '') + ' · ' + n + ' principales · ' +
-      (esDens(p.formato) ? (p.bloques || []).length + ((p.bloques || []).length === 1 ? ' bloque' : ' bloques') : p.rondas + (p.rondas === 1 ? ' ronda' : ' rondas')) + (p.minutos ? ' · unos ' + p.minutos.total + ' min' : '') + '</div><div class="chips">' + ch.join('') +
+      (esDens(p.formato) ? (p.bloques || []).length + ((p.bloques || []).length === 1 ? ' bloque' : ' bloques') : p.rondas + (p.potencia ? (p.rondas === 1 ? ' serie' : ' series') : p.rondas === 1 ? ' ronda' : ' rondas')) + (p.minutos ? ' · unos ' + p.minutos.total + ' min' : '') + '</div><div class="chips">' + ch.join('') +
       '<button class="btn mini" onclick="App.verProp(\'' + lista + '\',\'' + dia + '\')">' + ico('lista') + 'Ver propuesta</button>' + bEnc + '</div></div>';
   }
   function verProp(lista, dia) { S.vp = { lista: lista.split(','), dia: dia || S.dia || hoyIso() }; pintarProp(); }
   function cerrarProp() { S.vp = null; cerrarModal(); pintar(); }
   function htmlPregPlan(cid, q) {
-    var T = { 'subir': ['Subir', 'v'], 'bajar': ['Bajar', 'a'], 'mantener aquí': ['Mantener aquí', 'z'], 'aceptar nivel': ['Aceptar este nivel', 'z'], 'revisar techo': ['Revisar el techo', 'z'], 'cambiar': [q.clase === 'cce' ? 'Cuerpo completo' : 'Cambiar', 'z'] }[q.tipo] || [q.tipo, ''];
+    var T = { 'subir': ['Subir', 'v'], 'bajar': ['Bajar', 'a'], 'mantener aquí': ['Mantener aquí', 'z'], 'aceptar nivel': ['Aceptar este nivel', 'z'], 'revisar techo': ['Revisar el techo', 'z'], 'cambiar': [q.clase === 'cce' ? 'Cuerpo completo' : q.clase === 'enfoque' ? (q.cambio && q.cambio.enfoque === 'ENF_POTENCIA' ? 'Potencia' : 'Enfoque') : 'Cambiar', 'z'] }[q.tipo] || [q.tipo, ''];
     var acc = q.respuesta ? '<span class="chip ' + (q.respuesta === 'sí' ? 'v' : '') + '">' + (q.respuesta === 'sí' ? ico('check') + (q.espera ? 'Sí · falta la respuesta de su pareja' : 'Sí') : 'No') + '</span>'
       : '<div class="escala"><button class="op v" onclick="App.plResp(\'' + cid + '\',\'' + q.id + '\',\'sí\')">Sí</button><button class="op" onclick="App.plResp(\'' + cid + '\',\'' + q.id + '\',\'no\')">No</button></div>';
     return '<div class="preg"><div><div><span class="chip ' + T[1] + '">' + T[0] + '</span> <b>' + esc(q.ejercicio ? nombreEj(q.ejercicio) : 'Toda la sesión') + '</b></div><div style="margin-top:3px">' + esc(q.propuesta) + '</div>' +
-      '<div class="sub">' + esc(q.motivo) + (q.regla ? ' · regla ' + esc(q.regla) : '') + (q.motivoObligatorio && !q.respuesta ? ' · si dices que no, hay que escribir el motivo' : '') + '</div></div>' + acc + '</div>';
+      '<div class="sub">' + esc(q.motivo) + (q.regla ? ' · regla ' + esc(q.regla) : '') + (q.motivoObligatorio && !q.respuesta ? ' · si dices que no, hay que escribir el motivo' : '') + (q.cambio && q.cambio.conMotivo && !q.respuesta ? ' · si dices que sí, escribes el motivo' : '') + '</div></div>' + acc + '</div>';
   }
   function htmlFilaProp(cid, p, f) {
     var ch = [], pid = p.id, h = String(f.hueco), det = [];
@@ -1168,24 +1193,27 @@ var App = (function () {
   }
   function htmlProp(cid, dia, varios) {
     var p = propLista(cid, dia), c = I.C[cid] || {}, cab = '<div class="nombre">' + esc(c.nombre || cid) + ' <span class="sub">' + esc(cid) + '</span></div>';
+    if (esOnline(cid)) return '<div class="card">' + cab + '<div class="nota n">Cliente online: el planificador de domicilio no le propone sesiones. Cámbialo en su ficha (Planificación › Servicio) si también le entrenas en casa.</div></div>';
     if (!p) return '<div class="card">' + cab + '<div class="sub">Sin propuesta para este día.</div><div class="acciones"><button class="btn mini" onclick="App.pedirProp(\'' + cid + '\',\'' + dia + '\')">Pedirla ahora</button></div></div>';
     if (p.estado !== 'ok') return '<div class="card">' + cab + '<div class="nota r">' + ico('stop') + ' Carena no propone sesión a este cliente:<br>' + (p.bloqueos || []).map(function (b) { return '· ' + esc(b.texto); }).join('<br>') + '</div>' +
       '<div class="sub" style="margin-top:8px">Con una duda de seguridad abierta no se propone nada: se resuelve en su pantalla de Seguridad y la propuesta se rehace sola.</div>' +
       '<div class="acciones"><button class="btn mini" onclick="App.propSeguridad(\'' + cid + '\')">' + ico('escudo') + 'Ir a Seguridad</button><button class="btn mini" onclick="App.pedirProp(\'' + cid + '\',\'' + dia + '\')">Volver a calcular</button></div></div>';
     var m = p.minutos || {}, h = '<div class="card">' + cab;
     h += '<div class="kpi"><div>' + (p.enfoque ? 'Enfoque' : 'Día') + '<b>' + esc(p.enfoque ? nombreEnfoque(p.enfoque) : p.dia) + '</b></div><div>Fase<b>' + esc(p.fase) + '</b></div>' + (p.bloque ? '<div>Bloque<b>' + p.bloque + ' · ' + p.sesionBloque + '/8</b></div>' : '') +
-      (esDens(p.formato) ? '<div>Formato<b>' + esc(nombreFmt(p.formato)) + '</b></div>' : '<div>Rondas<b>' + p.rondas + '</b></div>') + '<div>RPE objetivo<b>≤ ' + fmtNum(p.rpeObjetivo) + '</b></div><div>Tiempo<b>' + (m.total ? '~' + m.total + ' min' : '—') + '</b></div></div>';
-    h += '<div class="chips">' + (p.sombra ? '<span class="chip">En sombra: sigue planificando v4</span>' : '<span class="chip v">Planifica Carena</span>') + (p.motivoFase ? '<span class="chip a">' + esc(p.motivoFase) + '</span>' : '') + (p.cce && p.cce.activo ? '<span class="chip z">Cuerpo completo · ' + esc(p.cce.texto) + '</span>' : '') + (p.aCriterio ? '<span class="chip o">parámetros a tu criterio</span>' : '') +
+      (esDens(p.formato) ? '<div>Formato<b>' + esc(nombreFmt(p.formato)) + '</b></div>' : '<div>' + (p.potencia ? 'Series' : 'Rondas') + '<b>' + p.rondas + '</b></div>') + '<div>RPE objetivo<b>≤ ' + fmtNum(p.rpeObjetivo) + '</b></div><div>Tiempo<b>' + (m.total ? '~' + m.total + ' min' : '—') + '</b></div></div>';
+    h += '<div class="chips">' + (p.sombra ? '<span class="chip">En sombra: sigue planificando v4</span>' : '<span class="chip v">Planifica Carena</span>') + (p.motivoFase ? '<span class="chip a">' + esc(p.motivoFase) + '</span>' : '') + (p.cce && p.cce.activo ? '<span class="chip z">Cuerpo completo · ' + esc(p.cce.texto) + '</span>' : '') + (p.aCriterio ? '<span class="chip o">parámetros a tu criterio</span>' : '') + chipS1(p) +
       (m.total ? '<span class="chip">calentamiento ' + m.calentamiento + ' + principal ' + m.principal + ' + vuelta ' + m.vuelta + ' min' + (m.visita ? ' · visita de ' + m.visita : '') + '</span>' : '') + '</div>';
     var enf = PLN().enfoques || [], cc = p.cce || {}, fq = cc.contexto === 'frecuencia';
     if (enf.length || cc.contexto) h += '<div class="campo"><label for="enf-' + cid + '">Hoy toca</label><select id="enf-' + cid + '" onchange="App.propEnfoque(\'' + cid + '\',\'' + dia + '\',this.value)">' +
-      opts([['', fq ? 'Lo que toca: cuerpo completo (va una vez por semana)' : 'Lo que toca: día ' + (p.dia && p.dia !== 'ENF_CCE' ? p.dia : 'A/B')]].concat(cc.contexto && !fq ? [['ENF_CCE', 'Cuerpo completo equilibrado · ' + cc.texto]] : [])
-        .concat(enf.map(function (e) { return [e.id, 'Enfoque: ' + e.nombre]; })), p.enfoque === 'ENF_CCE' && fq ? '' : p.enfoque || '') + '</select></div>';
+      opts([['', fq ? 'Lo que toca: cuerpo completo (va una vez por semana)' : p.porOrientacion ? 'Lo que toca: ' + nombreEnfoque(p.enfoque) + ' (por su orientación)' : 'Lo que toca: día ' + (p.dia && !/^ENF_/.test(p.dia) ? p.dia : p.diaTurno || 'A/B')]]
+        .concat(p.porOrientacion || p.sinOrientacion ? [['ENF_DIA', 'Día ' + (p.diaTurno || 'A/B') + ', sin la orientación']] : []).concat(cc.contexto && !fq ? [['ENF_CCE', 'Cuerpo completo equilibrado · ' + cc.texto]] : [])
+        .concat(enf.map(function (e) { return [e.id, 'Enfoque: ' + e.nombre]; })), p.enfoque === 'ENF_CCE' && fq ? '' : p.sinOrientacion ? 'ENF_DIA' : p.porOrientacion ? '' : p.enfoque || '') + '</select></div>';
     var fms = p.formatos || [], okF = fms.filter(function (x) { return x.ok; }), noF = fms.filter(function (x) { return !x.ok; });
     if (fms.length) {
       h += '<div class="campo"><label for="fmt-' + cid + '">Formato</label><select id="fmt-' + cid + '" onchange="App.propFormato(\'' + cid + '\',\'' + dia + '\',this.value)">' +
         opts(okF.map(function (x) { return [x.id, x.nombre + (x.id === p.formatoBase ? ' (el de siempre)' : '')]; }), p.formato) + '</select></div>';
-      if (noF.length) h += '<div class="sub" style="margin-top:4px">No se puede hoy: ' + noF.map(function (x) { return '<b>' + esc(x.nombre) + '</b> (' + esc(x.motivo) + ')'; }).join(' · ') + '</div>';
+      if (noF.length) { var gm = {}, om = []; noF.forEach(function (x) { if (!gm[x.motivo]) { gm[x.motivo] = []; om.push(x.motivo); } gm[x.motivo].push(x.nombre); });
+        h += '<div class="sub" style="margin-top:4px">No se puede hoy: ' + om.map(function (m) { return '<b>' + esc(gm[m].join(', ')) + '</b> (' + esc(m) + ')'; }).join(' · ') + '</div>'; }
     }
     if (esDens(p.formato)) {
       var pp = p.parametros || {}, b0 = (p.bloques || [])[0] || {}, man = pp.manual || {};
@@ -1200,6 +1228,9 @@ var App = (function () {
       if ((p.fueraDeBase || []).length) h += '<div class="nota a">' + ico('alerta') + ' Fuera de la base, a tu criterio: ' + esc(p.fueraDeBase.join(' · ')) + (p.relaja ? '<br>Relaja su perfil prudente. Motivo: «' + esc(p.relaja) + '»' : '') + ' ' +
         ((S.confFuera || {})[claveFuera(p)] ? '<span class="chip v">' + ico('check') + 'Confirmado</span>' : '<button class="btn mini" onclick="App.confFuera(\'' + cid + '\',\'' + dia + '\')">Confirmo</button>') + '</div>';
     }
+    if (p.fijada) h += '<div class="nota n">' + ico('candado') + ' Sesión fijada (' + esc(nombrePara(p.fijada.para)) + '): mismos ejercicios y dosis, sin subidas.<div class="acciones" style="margin:6px 0 0"><button class="btn mini" onclick="App.soltarFijada(\'' + cid + '\',\'' + p.fijada.id + '\')">Soltar</button><button class="btn mini" onclick="App.pedirProp(\'' + cid + '\',\'' + dia + '\',{sinFijada:true})">Hoy, lo que toque</button></div></div>';
+    else if (p.estado === 'ok' && !esDens(p.formato)) h += '<div class="acciones" style="margin:6px 0 0"><button class="btn mini" onclick="App.fijarProp(\'' + cid + '\')">' + ico('candado') + 'Fijar esta propuesta</button></div>';
+    if (p.potencia) h += '<div class="nota n">Potencia: ' + p.potencia.reps + ' repeticiones por serie, subida lo más rápida posible y bajada controlada; corta la serie si pierde velocidad; descanso de ' + esc(p.potencia.descanso) + ' entre series' + (p.potencia.dosisMinima ? '. Dosis mínima: es una de sus primeras sesiones de potencia' : '') + '.</div>';
     var av = (p.avisos || []).map(function (a) { return a.texto; }).concat(p.avisosValidador || []);
     if (av.length) h += '<div class="nota a">' + av.map(function (t) { return '· ' + esc(t); }).join('<br>') + '</div>';
     var pq = p.preguntas || [];
@@ -1210,6 +1241,9 @@ var App = (function () {
         h += '<div class="sec-prop">principal · ' + esc(nombreFmt(p.formato)) + '</div>';
         p.bloques.forEach(function (b) { var de = fs.filter(function (f) { return String(f.grupo) === String(b.n); }); if (!de.length) return; h += '<div class="sub" style="margin-top:8px"><b>Bloque ' + b.n + ' · ' + esc(textoBloque(b).t) + '</b></div>' + de.map(function (f) { return htmlFilaProp(cid, p, f); }).join(''); });
         fs.filter(function (f) { return !p.bloques.some(function (b) { return String(b.n) === String(f.grupo); }); }).forEach(function (f) { h += htmlFilaProp(cid, p, f); });
+      } else if (sec === 'principal' && p.remate) {
+        h += '<div class="sec-prop">principal · fuerza</div>' + fs.filter(function (f) { return !f.remate; }).map(function (f) { return htmlFilaProp(cid, p, f); }).join('');
+        h += '<div class="sec-prop">cardio final · ' + esc(textoRemate(p.remate)) + '</div>' + fs.filter(function (f) { return f.remate; }).map(function (f) { return htmlFilaProp(cid, p, f); }).join('');
       } else
       h += '<div class="sec-prop">' + sec + (sec === 'principal' ? ' · ' + (p.formato || '') : '') + '</div>' + fs.map(function (f) { return htmlFilaProp(cid, p, f); }).join('');
       if (sec === 'principal') (p.vacios || []).forEach(function (v) {
@@ -1248,10 +1282,12 @@ var App = (function () {
     var p = PLN().propuestas[cid], q = p ? (p.preguntas || []).filter(function (x) { return x.id === qid; })[0] : null; if (!q || q.respuesta) return;
     var manda = function (motivo) {
       hacer('responder', { pregunta: qid, cliente: cid, respuesta: r, motivo: motivo || '' });
+      if (r === 'sí' && q.tipo === 'cambiar' && q.clase === 'enfoque' && q.cambio && q.cambio.enfoque) { elegir(S.vp ? S.vp.lista.join(',') : cid, S.vp ? S.vp.dia : p.fecha, { enfoque: q.cambio.enfoque, formato: '', parametros: motivo ? { motivo: motivo } : null, motivo: motivo || '' }); return; }
       if (r === 'sí' && q.tipo === 'cambiar' && q.clase === 'cce') { elegir(S.vp ? S.vp.lista.join(',') : cid, S.vp ? S.vp.dia : p.fecha, { enfoque: 'ENF_CCE', formato: esDens(p.formato) ? p.formato : '', parametros: parActual(p), motivo: (parActual(p) || {}).motivo || '' }); return; }
       if (S.vp) pintarProp(); else pintar();
       toast(r === 'sí' ? (q.tipo === 'revisar techo' ? 'Apuntado · revisa su techo en Seguridad' : q.tipo === 'mantener aquí' ? 'Se mantiene: no te lo vuelvo a proponer' : 'Aplicado a la propuesta') : q.tipo === 'subir' ? 'No sube · no te lo pregunto en 14 días' : 'Apuntado');
     };
+    if (r === 'sí' && q.cambio && q.cambio.conMotivo) { var vq = S.vp; pedirTexto('Sesión de potencia', 'Tiene criterios prudentes (' + (q.motivo || '') + '). Escribe por qué la hace hoy bajo tu supervisión: queda anotado con la sesión.', '', true, function (m) { S.vp = vq; manda(m); }); return; }
     if (r === 'no' && q.motivoObligatorio) { var vp = S.vp; pedirTexto('No bajar con techo clínico', 'El techo de RPE de ' + nombreCorto(cid) + ' es clínico y la última sesión lo pasó. Escribe por qué no se baja (queda un aviso en Pendientes).', '', true, function (m) { S.vp = vp; manda(m); }); return; }
     manda('');
   }
@@ -1266,11 +1302,12 @@ var App = (function () {
       guardar(K.snap, S.snap);
       if (luego) luego(res); else if (S.vp) pintarProp(); else pintar();
     }).withFailureHandler(function (err) { toast('No se pudo calcular: ' + String(err && err.message || err)); if (S.vp) pintarProp(); })
-      .apiPropuesta({ cliente: cid, fecha: dia, enfoque: el.enfoque || '', formato: el.formato || '', parametros: el.parametros || null, motivo: el.motivo || '', encargo: el.encargo === true,
+      .apiPropuesta({ cliente: cid, fecha: dia, enfoque: el.enfoque || '', formato: el.formato || '', parametros: el.parametros || null, motivo: el.motivo || '', encargo: el.encargo === true, sinFijada: el.sinFijada === true,
                       solo: ids.length === 1 && !!(I.C[cid] || {}).pareja && !(S.vp && S.vp.lista.length > 1) });
   }
   function propEnfoque(cid, dia, enfoque) {
-    var p = propLista(cid, dia) || {}, d = esDens(p.formato);
+    var p = propLista(cid, dia) || {}, d = esDens(p.formato), vp = S.vp;
+    if (enfoque === 'ENF_POTENCIA') { pedirTexto('Sesión de potencia', 'Si tiene cardiopatía, techo de RPE 5 o menos, riesgo de caída u 80 años, escribe por qué la hace bajo tu supervisión (sin motivo, Carena propone el día que toca). Si no, déjalo vacío.', '', false, function (m) { S.vp = vp; elegir(listaVp(cid), dia, { enfoque: enfoque, formato: '', parametros: m ? { motivo: m } : null, motivo: m }); }); return; }
     elegir(listaVp(cid), dia, { enfoque: enfoque, formato: d ? p.formato : '', parametros: parActual(p), motivo: (parActual(p) || {}).motivo || '' });
   }
   /** En una sesión vacía (sin cita o sin plan): pedir la propuesta y cargarla. */
@@ -1328,16 +1365,57 @@ var App = (function () {
     hacer('seguridad', { cambios: cambios, motivo: m, confirmado: true }); cerrarModal(); pintar(); toast(ids.length + (ids.length === 1 ? ' ejercicio pasa' : ' ejercicios pasan') + ' a tolerado · Carena rehace sus propuestas');
   }
   /** Bloque «Planificación» de la ficha del cliente: quién planifica, datos que usa el motor y lo que el motor no puede proponer. */
+  // ---- B5: sesiones fijadas ----
+  function fijadasDe(cid) { return ((PLN().fijadas || {})[cid] || []).slice(); }
+  function nombrePara(x) { return x === 'todas' ? 'todas las sesiones' : /^ENF_/.test(x) ? nombreEnfoque(x) : 'día ' + x; }
+  function htmlFijadas(cid) {
+    var l = fijadasDe(cid); if (!l.length) return '';
+    return '<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('candado') + 'Sesiones fijadas</div>' + l.map(function (x) {
+      return '<div class="preg"><div><b>' + esc(nombrePara(x.para)) + '</b> <span class="sub">· ' + x.ejercicios + ' ejercicios · desde ' + fechaCorta(x.desde) + (x.hasta ? ' hasta ' + fechaCorta(x.hasta) : ' hasta que la sueltes') + (x.motivo ? ' · ' + esc(x.motivo) : '') + '</span>' +
+        '<div class="sub">Se repite con los mismos ejercicios y dosis, sin subidas. Lo que un día no pase su filtro de seguridad se sustituye con aviso.</div></div>' +
+        '<button class="btn mini" onclick="App.soltarFijada(\'' + cid + '\',\'' + x.id + '\')">Soltar</button></div>';
+    }).join('') + '</div>';
+  }
+  function fijarSesion(cid, sid) {
+    var d = S.cache['cli' + cid], s = d ? d.sesiones.filter(function (x) { return x.id === sid; })[0] : null; if (!s) return;
+    var filas = s.filas.filter(function (f) { return f.ejercicio && ['quitada', 'prescrita'].indexOf(f.estadoFila) < 0; }).map(function (f) { return { ejercicio: f.ejercicio, bloque: f.bloque, orden: f.orden, dosis: f.dosis, carga: f.carga, kg: f.kg, color: f.color, rondas: f.rondas }; });
+    formFijar(cid, { origen: 'sesión', referencia: sid, para: /^([ABC]|ENF_[A-Z_]+)$/.test(s.dia) ? s.dia : '', formato: s.formato, filas: filas });
+  }
+  function fijarProp(cid) {
+    var p = PLN().propuestas[cid]; if (!p || p.estado !== 'ok') return;
+    var filas = p.filas.filter(function (f) { return !f.quitada; }).map(function (f) { return { ejercicio: f.ejercicio, bloque: f.seccion, orden: f.n, dosis: f.dosis, carga: f.carga, kg: f.kg, color: f.color, rondas: f.rondas, hueco: f.hueco }; });
+    formFijar(cid, { origen: 'propuesta', referencia: p.id, para: p.enfoque || p.dia, formato: p.formato, rondas: p.rondas, filas: filas });
+  }
+  function formFijar(cid, x) {
+    var c = I.C[cid] || {}, dias = (num(c.sesionesSemana) || 2) >= 3 ? ['A', 'B', 'C'] : ['A', 'B'];
+    var paras = dias.map(function (d) { return [d, 'Día ' + d]; }).concat(/^ENF_/.test(x.para) ? [[x.para, nombreEnfoque(x.para)]] : []).concat([['todas', 'Todas las sesiones']]);
+    S.fijar = { cid: cid, x: x };
+    modal('<h3>' + ico('candado') + ' Fijar esta sesión</h3><div class="sub">' + esc(nombreCli(cid)) + ' · ' + x.filas.filter(function (f) { return (f.bloque || 'principal') === 'principal'; }).length + ' ejercicios principales</div>' +
+      '<div class="nota n">Se repetirá con los mismos ejercicios y dosis, sin proponerte subidas, aunque toque cambio. La seguridad no se congela: si un día un ejercicio no pasa su filtro, se sustituye y te aviso.</div>' +
+      '<div class="rejilla"><div class="campo"><label>Para</label><select id="fj-para">' + opts(paras, x.para || dias[0]) + '</select></div><div class="campo"><label>Hasta (opcional)</label><input type="date" id="fj-hasta" min="' + hoyIso() + '"></div></div>' +
+      '<div class="campo"><label>Motivo (opcional)</label><input type="text" id="fj-motivo" placeholder="Le gusta, le va bien…"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" onclick="App.guardarFijar()">Fijar</button></div>');
+  }
+  function guardarFijar() {
+    var f = S.fijar; if (!f) return;
+    hacer('fijar', { accion: 'fijar', cliente: f.cid, para: val('fj-para'), origen: f.x.origen, referencia: f.x.referencia, filas: f.x.filas, formato: f.x.formato || '', rondas: f.x.rondas || '', hasta: val('fj-hasta'), motivo: val('fj-motivo') });
+    S.fijar = null; cerrarModal(); toast('Sesión fijada · la propuesta se rehace en cuanto haya red'); pintar();
+  }
+  function soltarFijada(cid, id) {
+    pedirTexto('Soltar la sesión fijada', 'Vuelve a lo que toque. ¿Por qué? (opcional)', '', false, function (m) { hacer('fijar', { accion: 'soltar', cliente: cid, id: id, motivo: m || '' }); toast('Soltada · la propuesta se rehace en cuanto haya red'); if (S.vp) pintarProp(); else pintar(); });
+  }
   function htmlPlanCliente(cid) {
     var c = I.C[cid] || {}, h = hallazgosDe(cid), tl = tolerarDe(cid), hoy = hoyIso(), p = PLN().propuestas[cid], out = '';
     out += '<h2>' + ico('lista') + 'Planificación</h2><div class="card"><div class="kpi"><div>Planifica<b>' + (conCarena(cid) ? 'Carena' : 'v4') + '</b></div><div>Objetivo<b>' + esc(c.objetivo || '—') + '</b></div><div>Suelo<b>' + esc(c.suelo || 'no') + '</b></div>' +
-      '<div>Visita<b>' + (num(c.duracion) ? num(c.duracion) + ' min' : '—') + '</b></div><div>Ancla<b style="font-size:14px">' + esc(c.ancla ? nombreEj(c.ancla) : '—') + '</b></div></div>' +
+      '<div>Visita<b>' + (num(c.duracion) ? num(c.duracion) + ' min' : '—') + '</b></div><div>Ancla<b style="font-size:14px">' + esc(c.ancla ? nombreEj(c.ancla) : '—') + '</b></div>' +
+      '<div>Servicio<b>' + esc(c.servicio || 'domicilio') + '</b></div><div>Orientación<b style="font-size:14px">' + esc(c.orientacion || 'como hoy') + '</b></div></div>' +
       (c.materialCasa ? '<div class="sub" style="margin-top:8px">Material en casa: ' + esc(c.materialCasa) + '</div>' : '') +
       (!num(c.duracion) ? '<div class="nota n">Sin la duración de la visita, Carena no ajusta el número de ejercicios ni las rondas al tiempo.</div>' : '') +
       (p && p.fecha >= hoy ? (p.estado === 'ok' ? '<div class="sub" style="margin-top:8px">Próxima propuesta: ' + fechaCorta(p.fecha) + ' · ' + esc(tituloProp(p)) + ' · ' + esc(p.fase) + '</div>'
         : '<div class="nota ' + (conCarena(cid) ? 'r' : 'a') + '">' + ico('stop') + ' Carena no le propone sesión: ' + esc(((p.bloqueos || [])[0] || {}).texto || '') + '</div>') : '') +
       (h && h.bloqueos && h.bloqueos.length && !(p && p.estado !== 'ok') ? '<div class="nota a">' + ico('alerta') + ' Hoy Carena no podría proponerle sesión: ' + esc(h.bloqueos[0]) + '</div>' : '') +
       '<div class="acciones"><button class="btn mini" onclick="App.editarPlan(\'' + cid + '\')">' + ico('lapiz') + 'Cambiar</button>' + (p && p.fecha >= hoy ? '<button class="btn mini" onclick="App.verProp(\'' + cid + '\',\'' + p.fecha + '\')">' + ico('lista') + 'Ver propuesta</button>' : '') + '</div></div>';
+    out += htmlFijadas(cid);
     var reglas = h && h.reglas ? Object.keys(h.reglas) : [];
     if (tl.length || reglas.length) {
       var N = { 'F-PIA': 'Presión intraabdominal por encima de su límite', 'F-VIGILANCIA': 'Vigilado por una condición', 'F-MATERIAL': 'Material que no está en el kit ni en su casa', 'F-NIVEL': 'Nivel por encima del suyo', 'F-SUELO': 'Es de suelo y no puede ir al suelo',
@@ -1358,6 +1436,8 @@ var App = (function () {
       '<div class="campo"><label>Duración de la visita (min)</label><input type="text" inputmode="numeric" id="p-dur" value="' + esc(num(c.duracion) || '') + '" placeholder="60"></div></div>' +
       '<div class="campo"><label>Ejercicio ancla (se repite siempre; vacío = ninguno)</label><input type="text" id="p-ancla" list="p-ejs" value="' + esc(c.ancla ? nombreEj(c.ancla) : '') + '" autocomplete="off" placeholder="Escribe para buscar"><datalist id="p-ejs">' + ejs.map(function (e) { return '<option value="' + esc(e.nombre) + '">'; }).join('') + '</datalist></div>' +
       '<div class="campo"><label>Material en casa (lo que tiene y se puede usar)</label><input type="text" id="p-mat" value="' + esc(c.materialCasa || '') + '" placeholder="silla firme, bicicleta estática, pelota…"></div>' +
+      '<div class="campo"><label>Servicio</label><select id="p-serv">' + opts([['domicilio', 'A domicilio'], ['online', 'Online (Carena no le planifica a domicilio)'], ['ambos', 'Los dos']], c.servicio || 'domicilio') + '</select></div>' +
+      '<div class="campo"><label>Orientación (una o varias; ninguna = como hoy)</label>' + ORIENTA.map(function (o) { var on = String(c.orientacion || '').split(/\s*,\s*/).indexOf(o[0]) >= 0; return '<label class="casilla" style="margin-top:6px"><input type="checkbox" data-ori="' + o[0] + '"' + (on ? ' checked' : '') + '><span>' + esc(o[1]) + '</span></label>'; }).join('') + '</div>' +
       '<div id="p-extra"></div>' +
       '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" onclick="App.guardarPlan(\'' + cid + '\')">Guardar</button></div>');
     planListo(cid);
@@ -1378,7 +1458,9 @@ var App = (function () {
     var c = I.C[cid] || {}, an = val('p-ancla'), ancla = '';
     if (an) { var e = S.snap.ejercicios.filter(function (x) { return norm(x.nombre) === norm(an) && x.estado !== 'archivado' && !x.local; })[0]; if (!e) { toast('No encuentro ese ejercicio: elígelo de la lista'); return; } ancla = e.id; }
     var dur = val('p-dur'); if (dur && !(num(dur) >= 20 && num(dur) <= 120)) { toast('La duración va de 20 a 120 minutos'); return; }
-    var nuevo = { 'Planifica': val('p-plan'), 'Objetivo': val('p-obj'), 'Puede ir al suelo': val('p-suelo'), 'Duración de la visita (min)': dur ? num(dur) : '', 'Ejercicio ancla': ancla, 'Material en casa': val('p-mat') }, campos = {};
+    var ori = ORIENTA.map(function (o) { return o[0]; }).filter(function (o) { var e = document.querySelector('[data-ori="' + o + '"]'); return e && e.checked; }).join(', ');
+    var serv = val('p-serv') === 'domicilio' && !c.servicio ? '' : val('p-serv');
+    var nuevo = { 'Planifica': val('p-plan'), 'Objetivo': val('p-obj'), 'Puede ir al suelo': val('p-suelo'), 'Duración de la visita (min)': dur ? num(dur) : '', 'Ejercicio ancla': ancla, 'Material en casa': val('p-mat'), 'Servicio': serv, 'Orientación': ori }, campos = {};
     Object.keys(nuevo).forEach(function (k) { var a = c[CAMPOS_PLAN[k]]; if (k === 'Planifica') a = conCarena(cid) ? 'Carena' : 'v4'; if (String(a === undefined || a === null ? '' : a) !== String(nuevo[k])) campos[k] = nuevo[k]; });
     if (!Object.keys(campos).length) { cerrarModal(); return; }
     var relaja = 'Puede ir al suelo' in campos && RANGO_SUELO[campos['Puede ir al suelo']] > RANGO_SUELO[c.suelo || ''], d = { cliente: cid, campos: campos };
@@ -1578,8 +1660,9 @@ var App = (function () {
   function guardarReg() { if (S.reg) guardar(K.reg, S.reg); else { try { localStorage.removeItem(K.reg); } catch (e) {} memoria[K.reg] = null; } }
   function toque() { var r = S.reg; if (!r) return; var a = Date.now(), d = a - (r.ultimoToque || a); if (d > 0 && d < 20000) r.activo += d; r.ultimoToque = a; }
   function filaDe(cid, i) { return S.reg.por[cid].filas[i]; }
-  function gemela(cid, f) {
-    var r = S.reg; if (!r.igual || r.clientes.length < 2) return null;
+  /** La fila del mismo ejercicio en el otro cliente de la pareja. «Igual para los dos» solo refleja marcar, quitar y añadir; lo que se apunta (rondas, repeticiones, carga) es siempre de cada uno. */
+  function gemela(cid, f, siempre) {
+    var r = S.reg; if ((!r.igual && !siempre) || r.clientes.length < 2) return null;
     var otro = r.clientes[0] === cid ? r.clientes[1] : r.clientes[0];
     var g = r.por[otro].filas.filter(function (x) { return x.val.ejercicio && x.val.ejercicio === f.val.ejercicio && x.bloque === f.bloque; })[0];
     return g ? { cid: otro, f: g } : null;
@@ -1633,7 +1716,7 @@ var App = (function () {
     S.progAnt = S.progAnt || {};
     h.push('<div class="reg-barra"><button class="btn" onclick="App.salirRegistro()">‹ Hoy</button>' +
       '<button class="btn" onclick="App.todo()">' + ico('check') + 'Todo como estaba</button>' +
-      (r.clientes.length === 2 ? '<button class="btn' + (r.igual ? ' pri' : '') + '" onclick="App.igual()">' + (r.igual ? ico('check') : '') + 'Igual para los dos</button>' : '') +
+      (r.clientes.length === 2 ? '<button class="btn' + (r.igual ? ' pri' : '') + '" onclick="App.igual()">' + (r.igual ? ico('check') : '') + 'Marcar a los dos</button>' : '') +
       '<span class="esp"></span><button class="btn" onclick="App.crono()" aria-label="Cronómetro" title="Cronómetro">' + ico('crono') + '</button><button class="btn pri' + (listo ? ' listo' : '') + '" onclick="App.cerrar()">Cerrar sesión</button></div>');
     h.push('<div class="cols">');
     r.clientes.forEach(function (cid) {
@@ -1766,6 +1849,7 @@ var App = (function () {
       '<div class="campo"><label>Molestia (0–10)</label><div class="opciones">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return '<button class="op' + (n >= 4 ? ' r' : n > 0 ? ' a' : '') + (num(v.molestia) === n ? ' on' : '') + '" onclick="App.setEdit(\'molestia\',' + n + ',this)">' + n + '</button>'; }).join('') + '</div>' +
       '<div id="zona" class="' + (num(v.molestia) ? '' : 'oculto') + '" style="margin-top:8px"><input type="text" id="in-zona" value="' + esc(v.zona) + '" placeholder="¿Dónde? (hombro derecho…)" oninput="App.setEdit(\'zona\',this.value)"></div><div id="aviso-mol"></div></div>' +
       '<div class="campo"><label>Observaciones</label><textarea id="in-obs" oninput="App.setEdit(\'obs\',this.value)">' + esc(v.obs) + '</textarea></div>' +
+      (gemela(cid, f, true) ? '<div class="campo"><label class="par chk"><input type="checkbox" id="in-mismo"><span>Lo mismo para ' + esc(nombreCorto(gemela(cid, f, true).cid)) + ' (rondas y repeticiones; la carga y la molestia, no)</span></label></div>' : '') +
       '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" onclick="App.guardarCambio()">Guardar</button></div>';
     modal(h); marcarCargaActual(); avisoCarga(); avisoMolestia();
   }
@@ -1800,8 +1884,9 @@ var App = (function () {
     var ed = S.edit, f = filaDe(ed.cid, ed.i), v = ed.v;
     if (pasaCarga(ed.cid, v.ejercicio, num(v.kg)) && !String(v.motivoCarga || '').trim()) { toast('Escribe el motivo de la carga'); return; }
     if (num(v.molestia) && !String(v.zona || '').trim()) { toast('Indica la zona de la molestia'); return; }
+    var mismo = $('in-mismo') && $('in-mismo').checked;
     toque(); f.val = v; if (f.estado !== 'añadida') f.estado = 'cambiada';
-    var g = gemela(ed.cid, f);
+    var g = mismo ? gemela(ed.cid, f, true) : null;          // B1: cada uno lo suyo, salvo que se pida lo mismo
     if (g) { g.f.val.rondas = v.rondas; g.f.val.dosis = v.dosis; if (g.f.estado !== 'añadida') g.f.estado = g.f.estado === 'prescrita' || g.f.estado === 'hecha' ? 'cambiada' : g.f.estado; }
     cerrarModal(); guardarReg(); pintarSesion();
   }
@@ -2161,7 +2246,7 @@ var App = (function () {
     if (!v || !v.ultima) return '<h2>' + ico('regla') + 'Valoraciones</h2><div class="card"><div class="sub">Sin valoraciones con fecha. ' + (v && v.toca ? esc(v.toca) + '. ' : '') + '<button class="btn mini" onclick="App.ir(\'valoracion\',\'' + cid + '\')">Hacer una</button></div></div>';
     var u = v.ultima, ant = (v.anteriores || [])[0];
     var previo = function (r) { var x = ant ? ant.resultados.filter(function (y) { return y.test === r.test && y.lado === r.lado; })[0] : null; return x; };
-    return '<h2>' + ico('regla') + 'Valoraciones <span class="sub">· última ' + fechaMedia(u.fecha) + (v.toca ? ' · ' + esc(v.toca) : '') + '</span></h2><div class="card"><table class="tabla res-val"><tr><th>Test</th><th>' + fechaCorta(u.fecha) + '</th><th>' + (ant ? fechaCorta(ant.fecha) : '') + '</th><th>Cambio</th></tr>' +
+    return '<h2>' + ico('regla') + 'Valoraciones <span class="sub">· última ' + fechaMedia(u.fecha) + (v.toca ? ' · ' + esc(v.toca) : v.proxima ? ' · la de 6 meses, el ' + fechaMedia(v.proxima) : '') + (v.sugiere ? ' · ' + esc(v.sugiere) : '') + '</span></h2><div class="card"><table class="tabla res-val"><tr><th>Test</th><th>' + fechaCorta(u.fecha) + '</th><th>' + (ant ? fechaCorta(ant.fecha) : '') + '</th><th>Cambio</th></tr>' +
       u.resultados.map(function (r) { var p = previo(r), it = interpretar(r.test, r.valor, p ? p.valor : null); return '<tr><td>' + esc((I.T[r.test] || {}).nombre || r.texto || r.test) + (r.lado ? ' <span class="sub">(' + esc(r.lado) + ')</span>' : '') + '</td><td><b>' + fmtNum(r.valor) + '</b> <span class="sub">' + esc(r.unidad) + '</span></td><td class="sub">' + (p ? fmtNum(p.valor) : '') + '</td><td>' + (p ? it.html : '') + '</td></tr>'; }).join('') + '</table></div>';
   }
   function interpretar(test, valor, previo) {
@@ -2179,7 +2264,8 @@ var App = (function () {
       $('graf').innerHTML = graficas(d);
       $('ult').innerHTML = (d.sesiones.map(function (s) {
         return '<details class="card"><summary><b>' + fechaCorta(s.fecha) + '</b> · ' + (s.dia ? 'Día ' + esc(s.dia) + ' · ' : '') + esc(s.formato) + (s.rpe !== '' && s.rpe !== null ? ' · RPE ' + fmtNum(s.rpe) : '') + (s.registrada === 'app' ? ' <span class="chip v">app</span>' : '') + '</summary><table class="tabla">' +
-          s.filas.map(function (f) { return '<tr><td>' + esc((I.E[f.ejercicio] || {}).nombre || f.texto) + '</td><td class="sub">' + esc([f.rondas ? f.rondas + '×' : '', f.dosis, f.carga].filter(Boolean).join(' ')) + (num(f.molestia) ? ' · molestia ' + f.molestia : '') + '</td></tr>'; }).join('') + '</table>' + (s.notas ? '<div class="sub">' + esc(s.notas) + '</div>' : '') + '</details>';
+          s.filas.map(function (f) { return '<tr><td>' + esc((I.E[f.ejercicio] || {}).nombre || f.texto) + '</td><td class="sub">' + esc([f.rondas ? f.rondas + '×' : '', f.dosis, f.carga].filter(Boolean).join(' ')) + (num(f.molestia) ? ' · molestia ' + f.molestia : '') + '</td></tr>'; }).join('') + '</table>' + (s.notas ? '<div class="sub">' + esc(s.notas) + '</div>' : '') +
+          (s.filas.some(function (f) { return f.ejercicio && (f.bloque || 'principal') === 'principal'; }) ? '<div class="acciones"><button class="btn mini" onclick="App.fijarSesion(\'' + cid + '\',\'' + s.id + '\')">' + ico('candado') + 'Fijar esta sesión</button></div>' : '') + '</details>';
       }).join('') || '<div class="vacio">Sin sesiones hechas</div>');
     };
     if (S.cache['cli' + cid]) pintarUlt(S.cache['cli' + cid]);
@@ -2394,14 +2480,15 @@ var App = (function () {
     if (!S.val || S.val.cliente !== cid) {
       var bateria = [];
       ((u && u.resultados) || []).forEach(function (r) { if (!bateria.some(function (b) { return b.test === r.test && b.lado === r.lado; })) bateria.push({ test: r.test, texto: r.texto, lado: r.lado, unidad: r.unidad || (I.T[r.test] || {}).unidad || '', valor: '', previo: r.valor, fechaPrevio: u.fecha }); });
-      S.val = { cliente: cid, fecha: hoyIso(), tipo: u ? 'seguimiento' : 'inicial', protocolo: u ? u.protocolo : '', notas: '', filas: bateria };
+      S.val = { cliente: cid, fecha: hoyIso(), tipo: u ? 'seguimiento' : 'inicial', protocolo: u ? u.protocolo : '', notas: '', filas: bateria,
+                rev: { cond: {}, nuevas: [], confirmado: false } };
     }
     var V = S.val;
     var h = '<div class="fila-dia"><button class="btn mini" onclick="App.ir(\'cliente\',\'' + cid + '\')">‹ ' + esc(nombreCorto(cid)) + '</button><div class="dia">Valoración de ' + esc(c.nombre) + '</div></div>' +
       '<div class="card"><div class="rejilla"><div class="campo"><label>Fecha</label><input type="date" value="' + esc(V.fecha) + '" onchange="App.valSet(\'fecha\',this.value)"></div>' +
       '<div class="campo"><label>Tipo</label><select onchange="App.valSet(\'tipo\',this.value)">' + opts(['inicial', 'seguimiento', 'final'], V.tipo) + '</select></div></div>' +
       '<div class="campo"><label>Protocolo (lo que cambia el resultado: silla, peso del curl, lado…)</label><input type="text" value="' + esc(V.protocolo) + '" oninput="App.valSet(\'protocolo\',this.value)"></div>' +
-      (u ? '<div class="sub" style="margin-top:8px">Batería de la última valoración (' + fechaMedia(u.fecha) + ') ya preparada.' + (v.toca ? ' ' + esc(v.toca) + '.' : '') + '</div>' : '<div class="sub" style="margin-top:8px">Sin valoración anterior: añade los tests de la batería.</div>') + '</div>';
+      (u ? '<div class="sub" style="margin-top:8px">Batería de la última valoración (' + fechaMedia(u.fecha) + ') ya preparada.' + (v.toca ? ' ' + esc(v.toca) + '.' : ' Valoración adelantada: a tu criterio (la obligatoria es la de 6 meses' + (v.proxima ? ', el ' + fechaMedia(v.proxima) : '') + ').') + '</div>' : '<div class="sub" style="margin-top:8px">Sin valoración anterior: añade los tests de la batería.</div>') + '</div>';
     h += '<div class="card">' + (V.filas.length ? '<div class="vt-cab"><span>Test</span><span>Hoy</span><span>Antes</span><span>Cambio</span><span></span></div>' : '') + '<div class="vtests">' + V.filas.map(function (f, i) {
       var t = I.T[f.test] || {}, it = interpretar(f.test, f.valor, f.previo), hay = f.previo !== undefined && f.previo !== null && f.previo !== '';
       return '<div class="vt"><div class="vt-n"><b>' + esc(t.nombre || f.texto || f.test) + '</b>' + (f.lado ? ' <span class="sub">(' + esc(f.lado) + ')</span>' : '') + '<div class="sub">' + esc(f.unidad) + (t.mejor ? ' · ' + esc(t.mejor) : '') + '</div></div>' +
@@ -2410,12 +2497,67 @@ var App = (function () {
         '<button class="icono vt-x" onclick="App.valQuitar(' + i + ')" aria-label="Quitar">' + ico('x') + '</button></div>';
     }).join('') + '</div>' + (V.filas.length ? '' : '<div class="vacio">Sin tests todavía</div>') +
       '<div class="acciones"><button class="btn mini" onclick="App.valAnadir()">' + ico('mas') + 'Añadir test</button></div></div>' +
+      htmlRevision(cid) +
       '<div class="card"><div class="campo" style="margin-top:0"><label>Notas</label><textarea oninput="App.valSet(\'notas\',this.value)">' + esc(V.notas) + '</textarea></div>' +
       '<div class="nota n">El cambio solo se da por real si supera el MDC95 del test (error de medida). Sin MDC95 en el catálogo, la app no lo interpreta.</div>' +
       '<div class="pie-modal"><button class="btn" onclick="App.valDescartar()">Descartar</button><button class="btn pri" onclick="App.guardarValoracion()">Guardar valoración</button></div></div>';
     $('main').innerHTML = h;
   }
   function valSet(k, v) { S.val[k] = v; }
+  // ---- B2: revisión de condiciones, obligatoria en cada valoración ----
+  function condActivas(cid) { return (I.cond[cid] || []).filter(function (x) { return (x.estado === 'confirmada' || x.estado === 'por confirmar') && !/-ficha$/.test(x.id); }); }
+  function etiquetasVig() { return S.snap.vigilancia.filter(function (v) { return v.estado !== 'retirada'; }).map(function (v) { return [v.etiqueta, v.etiqueta + (v.condicion && v.condicion !== v.etiqueta ? ' · ' + v.condicion : '')]; })
+    .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }); }
+  function htmlRevision(cid) {
+    var R = S.val.rev, cs = condActivas(cid), relaja = false;
+    var h = '<div class="card"><div class="nombre" style="display:flex;gap:8px;align-items:center">' + ico('escudo') + 'Revisión de condiciones <span class="chip a">obligatoria</span></div>' +
+      '<div class="sub">Repasa cada una con el cliente: si sigue igual, si ha cambiado (otra etiqueta) o si ya no la tiene. Quitar o cambiar relaja: pide motivo.</div>';
+    h += cs.map(function (x) {
+      var r = R.cond[x.id] || {}, a = r.accion || '';
+      if (a === 'quitar' || a === 'etiqueta') relaja = true;
+      var b = function (k, t) { return '<button class="op' + (a === k ? ' on' : '') + '" onclick="App.revAccion(\'' + x.id + '\',\'' + k + '\')">' + t + '</button>'; };
+      return '<div class="item" style="display:block"><div><b>' + esc(x.condicion || x.etiqueta) + '</b> <span class="chip">' + esc(x.etiqueta || 'sin etiqueta') + '</span> <span class="sub">' + esc(x.estado) + (x.revisada ? ' · revisada el ' + fechaMedia(x.revisada) : '') + '</span></div>' +
+        '<div class="opciones" style="margin-top:6px">' + b('sigue', 'Sigue igual') + b('etiqueta', 'Ha cambiado') + b('quitar', 'Ya no la tiene') + '</div>' +
+        (a === 'etiqueta' ? '<div class="campo"><label>Etiqueta nueva</label><select onchange="App.revCampo(\'' + x.id + '\',\'etiqueta\',this.value)">' + opts(etiquetasVig(), r.etiqueta, 'Elige') + '</select></div>' : '') +
+        (a === 'etiqueta' || a === 'quitar' ? '<div class="campo"><label>Motivo</label><input type="text" value="' + esc(r.motivo || '') + '" placeholder="Qué ha cambiado y quién lo dice" oninput="App.revCampo(\'' + x.id + '\',\'motivo\',this.value)"></div>' : '') + '</div>';
+    }).join('') || '<div class="vacio">Sin condiciones activas</div>';
+    h += R.nuevas.map(function (n, i) { return '<div class="item"><span><b>Nueva:</b> ' + esc(n.condicion) + ' <span class="chip">' + esc(n.etiqueta) + '</span>' + (n.estado === 'por confirmar' ? ' <span class="chip a">por confirmar</span>' : '') + '</span><button class="icono" onclick="App.revQuitarNueva(' + i + ')" aria-label="Quitar">' + ico('x') + '</button></div>'; }).join('');
+    h += '<div class="acciones"><button class="btn mini" onclick="App.revNueva()">' + ico('mas') + 'Condición nueva</button></div>';
+    if (relaja) h += '<label class="casilla" style="margin-top:10px"><input type="checkbox"' + (R.confirmado ? ' checked' : '') + ' onchange="App.revConfirmar(this.checked)"><span>Confirmo que quito o cambio estas condiciones y que el motivo lo justifica.</span></label>';
+    return h + '</div>';
+  }
+  function revAccion(id, a) { var R = S.val.rev; R.cond[id] = Object.assign(R.cond[id] || {}, { accion: a }); pintarValoracion(); }
+  function revCampo(id, k, v) { var R = S.val.rev; (R.cond[id] = R.cond[id] || {})[k] = v; }
+  function revConfirmar(v) { S.val.rev.confirmado = !!v; }
+  function revQuitarNueva(i) { S.val.rev.nuevas.splice(i, 1); pintarValoracion(); }
+  function revNueva() {
+    var L = listas();
+    modal('<h3>Condición nueva</h3><div class="campo"><label>Cómo la dirías</label><input type="text" id="rn-cond" placeholder="Rodilla derecha: menisco degenerativo"></div>' +
+      '<div class="rejilla"><div class="campo"><label>Etiqueta</label><select id="rn-etq">' + opts(etiquetasVig(), '', 'Elige') + '</select></div><div class="campo"><label>Lado</label><select id="rn-lado">' + opts(L.lado || [], '', '—') + '</select></div>' +
+      '<div class="campo"><label>Zona</label><input type="text" id="rn-zona"></div><div class="campo"><label>Estado</label><select id="rn-est">' + opts(['confirmada', 'por confirmar'], 'confirmada') + '</select></div></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri" id="rn-ok">Añadir</button></div>');
+    $('rn-ok').onclick = function () {
+      var n = { condicion: val('rn-cond'), etiqueta: val('rn-etq'), lado: val('rn-lado'), zona: val('rn-zona'), estado: val('rn-est') };
+      if (!n.condicion || !n.etiqueta) { toast('Escribe la condición y elige su etiqueta'); return; }
+      S.val.rev.nuevas.push(n); cerrarModal(); pintarValoracion();
+    };
+  }
+  /** Lo que se manda de la revisión, o un texto con lo que falta. */
+  function revisionLista(cid) {
+    var R = S.val.rev, cs = condActivas(cid), out = { condiciones: [], nuevas: R.nuevas.slice(), confirmado: !!R.confirmado }, relaja = false;
+    for (var k = 0; k < cs.length; k++) {
+      var x = cs[k], r = R.cond[x.id] || {};
+      if (!r.accion) return 'Revisa todas las condiciones: falta «' + (x.condicion || x.etiqueta) + '»';
+      if (r.accion !== 'sigue') {
+        relaja = true;
+        if (String(r.motivo || '').trim().length < 4) return 'Escribe el motivo de «' + (x.condicion || x.etiqueta) + '»';
+        if (r.accion === 'etiqueta' && !r.etiqueta) return 'Elige la etiqueta nueva de «' + (x.condicion || x.etiqueta) + '»';
+      }
+      out.condiciones.push({ id: x.id, accion: r.accion, etiqueta: r.etiqueta || '', motivo: r.motivo || '' });
+    }
+    if (relaja && !R.confirmado) return 'Marca la casilla de confirmación para quitar o cambiar condiciones';
+    return out;
+  }
   function valFila(i, v) { var f = S.val.filas[i]; f.valor = v; var el = $('vi-' + i); if (el) el.innerHTML = interpretar(f.test, v, f.previo).html; }
   function valQuitar(i) { S.val.filas.splice(i, 1); pintarValoracion(); }
   function valDescartar() { var cid = S.val.cliente; S.val = null; ir('cliente', cid); }
@@ -2438,7 +2580,8 @@ var App = (function () {
   function guardarValoracion() {
     var V = S.val, res = V.filas.filter(function (f) { return num(f.valor) !== null; });
     if (!res.length) { toast('Escribe al menos un resultado'); return; }
-    hacer('valoracion', { cliente: V.cliente, fecha: V.fecha, tipo: V.tipo, protocolo: V.protocolo, notas: V.notas,
+    var rv = revisionLista(V.cliente); if (typeof rv === 'string') { toast(rv); return; }
+    hacer('valoracion', { cliente: V.cliente, fecha: V.fecha, tipo: V.tipo, protocolo: V.protocolo, notas: V.notas, revision: rv,
       resultados: res.map(function (f) { return { test: f.test, texto: f.texto, lado: f.lado, valor: num(f.valor), unidad: f.unidad }; }) });
     var cid = V.cliente; S.val = null; toast('Valoración guardada · ' + res.length + ' resultados'); ir('cliente', cid);
   }
@@ -2715,7 +2858,7 @@ var App = (function () {
       .sort(function (a, b) { return (num(b.usos) || 0) - (num(a.usos) || 0); });
     var n = { activo: 0, borrador: 0, archivado: 0 }; S.snap.ejercicios.forEach(function (e) { n[e.estado] = (n[e.estado] || 0) + 1; });
     var sel = Object.keys(S.sel).filter(function (k) { return S.sel[k]; });
-    $('main').innerHTML = '<div class="buscar"><input type="search" placeholder="Buscar ejercicio" value="' + esc(S.filtroCat || '') + '" oninput="App.filtroCat(this.value)"><button class="btn" onclick="App.nuevoEj()">' + ico('mas') + 'Nuevo</button></div>' +
+    $('main').innerHTML = '<div class="buscar"><input type="search" placeholder="Buscar ejercicio" value="' + esc(S.filtroCat || '') + '" oninput="App.filtroCat(this.value)"><button class="btn" onclick="App.nuevoEj()">' + ico('mas') + 'Nuevo</button><button class="btn" onclick="App.nuevoCombo()">' + ico('mas') + 'Combinado</button></div>' +
       '<div class="opciones" style="margin-bottom:10px">' + [['activo', 'Activos · ' + n.activo], ['borrador', 'En borrador · ' + (n.borrador || 0)], ['archivado', 'Archivados · ' + (n.archivado || 0)], ['todos', 'Todos']].map(function (x) { return '<button class="op' + (est === x[0] ? ' on' : '') + '" onclick="App.estCat(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>' +
       (est === 'borrador' ? '<div class="card a"><div class="sub">Revisa cada uno (toca para ver y corregir sus atributos) o marca varios y actívalos con los atributos propuestos.</div><div class="acciones"><button class="btn mini ok" ' + (sel.length ? '' : 'disabled ') + 'onclick="App.catBloque(\'activo\')">' + ico('check') + 'Activar ' + sel.length + '</button><button class="btn mini" ' + (sel.length ? '' : 'disabled ') + 'onclick="App.catBloque(\'archivado\')">Archivar ' + sel.length + '</button></div></div>' : '') +
       '<div class="caja">' + lista.slice(0, 200).map(function (e) {
@@ -2726,15 +2869,16 @@ var App = (function () {
   }
   var CAMPOS_EJ = [['Patrón', 'patron', 'patron'], ['Tipo', 'tipo', 'tipoEj'], ['Posición', 'posicion', 'posicion'], ['Impacto', 'impacto', 'impacto'], ['Muñeca', 'muneca', 'muneca'], ['Agarre', 'agarre', 'agarre'],
                    ['Presión intraabdominal', 'pia', 'nivel3'], ['Equilibrio', 'equilibrio', 'nivel3'], ['Ruido', 'ruido', 'ruido'], ['Espacio', 'espacio', 'espacio']];
-  var SI_EJ = [['Unilateral', 'unilateral'], ['Por encima de la cabeza', 'oh'], ['Flexión de columna con carga', 'flexion']];
+  var SI_EJ = [['Unilateral', 'unilateral'], ['Por encima de la cabeza', 'oh'], ['Flexión de columna con carga', 'flexion'], ['Extensión de columna', 'extension']];
   function fichaEj(id) {
     var e = I.E[id]; if (!e) { e = S.snap.ejercicios.filter(function (x) { return x.id === id; })[0]; if (!e) return; }
     var L = listas(), edita = e.estado === 'borrador' && !e.local;
     if (!edita) {
       var fila = function (k, v) { return v === '' || v === null || v === undefined ? '' : '<tr><td class="sub">' + k + '</td><td>' + esc(v) + '</td></tr>'; };
       modal('<h3>' + esc(e.nombre) + '</h3><div class="sub">' + esc(e.local ? 'pendiente de subir' : e.id) + ' · ' + esc(e.estado) + (e.usos ? ' · ' + e.usos + ' usos' : '') + '</div>' + htmlVideoEj(e) + '<table class="tabla" style="margin-top:10px">' +
+        ((e.componentes || []).length ? fila('Combinado de', e.componentes.map(nombreEj).join(' + ')) : '') +
         fila('Patrón', e.patron) + fila('Tipo', e.tipo) + fila('Posición', e.posicion) + fila('Material', e.material) + fila('Unilateral', e.unilateral ? 'sí' : 'no') + fila('Nivel', e.nivel) +
-        fila('Impacto', e.impacto) + fila('Muñeca', e.muneca) + fila('Agarre', e.agarre) + fila('Por encima de la cabeza', e.oh ? 'sí' : 'no') + fila('Flexión de columna con carga', e.flexion ? 'sí' : 'no') +
+        fila('Impacto', e.impacto) + fila('Muñeca', e.muneca) + fila('Agarre', e.agarre) + fila('Por encima de la cabeza', e.oh ? 'sí' : 'no') + fila('Flexión de columna con carga', e.flexion ? 'sí' : 'no') + fila('Extensión de columna', e.extension ? 'sí' : 'no') +
         fila('Presión intraabdominal', e.pia) + fila('Equilibrio', e.equilibrio) + fila('Alternativas', e.alternativas) + fila('Regresión', (I.E[e.regresion] || {}).nombre || e.regresion) + fila('Progresión', (I.E[e.progresion] || {}).nombre || e.progresion) +
         fila('Dosis típica', e.dosis) + fila('Consignas', e.consignas) + fila('Notas', e.notas) + '</table><div class="pie-modal">' + (e.estado === 'archivado' && !e.local ? '<button class="btn" onclick="App.guardarEj(\'' + id + '\',\'borrador\')">Volver a borrador</button>' : '') + '<button class="btn pri" onclick="App.cerrarModal()">Cerrar</button></div>');
       return;
@@ -2797,6 +2941,36 @@ var App = (function () {
     var ids = Object.keys(S.sel).filter(function (k) { return S.sel[k]; }); if (!ids.length) return;
     hacer('catalogo', { accion: 'guardar', items: ids.map(function (id) { return { ID: id, campos: { 'Estado': estado } }; }), motivo: 'Revisión en bloque en la app' });
     S.sel = {}; pintar(); toast(ids.length + (estado === 'activo' ? ' activados' : ' archivados'));
+  }
+  // ---- B4: ejercicio combinado (2 o 3 ejercicios del catálogo, uno detrás de otro) ----
+  function nuevoCombo() {
+    S.combo = [];
+    pintarCombo();
+  }
+  function pintarCombo() {
+    var c = S.combo || [];
+    modal('<h3>Ejercicio combinado</h3><div class="sub">Elige 2 o 3 ejercicios del catálogo. Carena comprueba cada uno por separado con la seguridad de cada cliente (si uno no pasa, el combinado no entra). No lo propone solo: lo pones tú en la sesión o en una sesión fijada.</div>' +
+      '<div class="caja" style="margin-top:8px">' + (c.map(function (id, i) { return '<div class="item"><span><b>' + (i + 1) + '.</b> ' + esc(nombreEj(id)) + '</span><button class="icono" onclick="App.comboQuitar(' + i + ')" aria-label="Quitar">' + ico('x') + '</button></div>'; }).join('') || '<div class="vacio">Sin ejercicios todavía</div>') + '</div>' +
+      (c.length < 3 ? '<div class="campo"><input type="search" id="cb-q" placeholder="Busca el ' + (c.length + 1) + 'º ejercicio" oninput="App.comboFiltrar(this.value)" autocomplete="off"></div><div class="lista-ej" id="cb-res"></div>' : '') +
+      '<div class="campo"><label>Nombre</label><input type="text" id="cb-nombre" value="' + esc(c.map(nombreEj).join(' + ')) + '"></div>' +
+      '<div class="pie-modal"><button class="btn" onclick="App.cerrarModal()">Cancelar</button><button class="btn pri"' + (c.length < 2 ? ' disabled' : '') + ' onclick="App.guardarCombo()">Crear</button></div>');
+    if (c.length < 3) comboFiltrar('');
+  }
+  function comboFiltrar(q) {
+    var n = norm(q).split(/\s+/).filter(Boolean), el = $('cb-res'); if (!el) return;
+    el.innerHTML = S.snap.ejercicios.filter(function (e) { return e.estado !== 'archivado' && !e.local && !(e.componentes || []).length && (S.combo || []).indexOf(e.id) < 0 && n.every(function (w) { return norm(e.nombre + ' ' + e.abrev + ' ' + e.patron).indexOf(w) >= 0; }); })
+      .sort(function (a, b) { return (num(b.usos) || 0) - (num(a.usos) || 0); }).slice(0, 30)
+      .map(function (e) { return '<button onclick="App.comboElegir(\'' + e.id + '\')"><div>' + esc(e.nombre) + (e.estado === 'borrador' ? ' <span class="chip a">borrador</span>' : '') + '</div><div class="sub">' + esc([e.patron, e.tipo, e.material].filter(Boolean).join(' · ')) + '</div></button>'; }).join('') || '<div class="vacio">Nada con ese nombre</div>';
+  }
+  function comboElegir(id) { S.combo = (S.combo || []).concat([id]).slice(0, 3); pintarCombo(); }
+  function comboQuitar(i) { S.combo.splice(i, 1); pintarCombo(); }
+  function guardarCombo() {
+    var c = S.combo || [], nb = val('cb-nombre') || c.map(nombreEj).join(' + ');
+    if (c.length < 2) { toast('Elige al menos 2 ejercicios'); return; }
+    if (S.snap.ejercicios.some(function (e) { return norm(e.nombre) === norm(nb); })) { toast('Ya existe un ejercicio con ese nombre'); return; }
+    var ya = S.snap.ejercicios.filter(function (e) { return (e.componentes || []).join(';') === c.join(';'); })[0];
+    if (ya) { toast('Ese combinado ya existe: «' + ya.nombre + '»' + (ya.estado === 'borrador' ? ' (en borrador: actívalo en el catálogo)' : '')); return; }
+    hacer('catalogo', { accion: 'combinado', componentes: c, nombre: nb }); S.combo = null; cerrarModal(); pintar(); toast('Combinado creado · se sube en cuanto haya red');
   }
   function nuevoEj() {
     var L = listas();
@@ -3029,12 +3203,12 @@ var App = (function () {
            bloqueDatos: bloqueDatos, opUna: opUna, guardarBloqueDatos: guardarBloqueDatos, bloqueConsentimientos: bloqueConsentimientos, cbAplicar: cbAplicar, guardarConsentimientos: guardarConsentimientos,
            tolAccion: tolAccion, condAccion: condAccion, limAccion: limAccion, formCond: formCond, guardarCond: guardarCond, formLim: formLim, guardarLim: guardarLim,
            relajarListo: relajarListo, guardarRelajar: guardarRelajar,
-           valSet: valSet, valFila: valFila, valQuitar: valQuitar, valDescartar: valDescartar, valAnadir: valAnadir, valFiltrar: valFiltrar, valElegir: valElegir, guardarValoracion: guardarValoracion,
+           valSet: valSet, fijarSesion: fijarSesion, fijarProp: fijarProp, guardarFijar: guardarFijar, soltarFijada: soltarFijada, revAccion: revAccion, revCampo: revCampo, revConfirmar: revConfirmar, revQuitarNueva: revQuitarNueva, revNueva: revNueva, valFila: valFila, valQuitar: valQuitar, valDescartar: valDescartar, valAnadir: valAnadir, valFiltrar: valFiltrar, valElegir: valElegir, guardarValoracion: guardarValoracion,
            documento: documento, docArchivo: docArchivo, guardarDocumento: guardarDocumento, editarCliente: editarCliente, guardarCliente: guardarCliente,
            guardarAlta: guardarAlta, nuevaAlta: nuevaAlta, invitar: invitar, crearInvitacion: crearInvitacion, copiarEnlace: copiarEnlace, pedirFirma: pedirFirma, firmaTodos: firmaTodos, firmaTodosOk: firmaTodosOk,
-           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, verProp: verProp, cerrarProp: cerrarProp, propEd: propEd, propSeguridad: propSeguridad, empezarCarena: empezarCarena, plResp: plResp, pedirProp: pedirProp, propEnfoque: propEnfoque, propFormato: propFormato, propParam: propParam, confFuera: confFuera, encargar: encargar, encFormato: encFormato, cerrarEncargo: cerrarEncargo, guardarEncargo: guardarEncargo, cronoBloque: cronoBloque, cronoApuntar: cronoApuntar, resFmt: resFmt, propEnSesion: propEnSesion,
+           renovarInv: renovarInv, anularInv: anularInv, revisarAlta: revisarAlta, decidirCu: decidirCu, vincularAlta: vincularAlta, pintarYa: function () { pintar(); }, verProp: verProp, cerrarProp: cerrarProp, propEd: propEd, propSeguridad: propSeguridad, empezarCarena: empezarCarena, plResp: plResp, pedirProp: pedirProp, propEnfoque: propEnfoque, propFormato: propFormato, propParam: propParam, confFuera: confFuera, encargar: encargar, encFormato: encFormato, encEnfoque: encEnfoque, cerrarEncargo: cerrarEncargo, guardarEncargo: guardarEncargo, cronoBloque: cronoBloque, cronoApuntar: cronoApuntar, resFmt: resFmt, propEnSesion: propEnSesion,
            abrirTolerar: abrirTolerar, tolerarListo: tolerarListo, guardarTolerar: guardarTolerar, editarPlan: editarPlan, planListo: planListo, guardarPlan: guardarPlan, setNotaJ: setNotaJ, setEtq: setEtq,
-           guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, _S: S, _I: function () { return I; } };
+           guardarEj: guardarEj, selEj: selEj, catBloque: catBloque, nuevoEj: nuevoEj, guardarNuevoEj: guardarNuevoEj, nuevoCombo: nuevoCombo, comboFiltrar: comboFiltrar, comboElegir: comboElegir, comboQuitar: comboQuitar, guardarCombo: guardarCombo, _S: S, _I: function () { return I; } };
 })();
 </script>
 </body>
